@@ -34,6 +34,6 @@ mecanicosYa_backend/
 ```
 
 ## Requisitos
-- Java
-- SpringBoot
+- Java 21
+- SpringBoot 4.1.1
 - Maven
