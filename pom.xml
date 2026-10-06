@@ -23,6 +23,7 @@
         <module>shared-observability</module>
         <module>mechanic-service</module>
         <module>dispatch-service</module>
+        <module>assistance-service</module>
     </modules>
 
     <properties>
