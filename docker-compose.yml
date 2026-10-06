@@ -16,5 +16,29 @@ services:
       timeout: 5s
       retries: 20
 
+  mechanic-service:
+    restart: on-failure
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile
+      args:
+        MODULE: mechanic-service
+    environment:
+      SERVER_PORT: 8081
+      DB_URL: jdbc:postgresql://postgres:5432/mechanics_db
+      DB_USERNAME: mechanics_user
+      DB_PASSWORD: mechanics_pass
+      SPRING_DATASOURCE_HIKARI_INITIALIZATION_FAIL_TIMEOUT: 60000
+    ports:
+      - "8081:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8081/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
 volumes:
   mecanicosya-postgres-data:
