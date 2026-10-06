@@ -21,6 +21,7 @@
 
     <modules>
         <module>shared-observability</module>
+        <module>mechanic-service</module>
     </modules>
 
     <properties>
