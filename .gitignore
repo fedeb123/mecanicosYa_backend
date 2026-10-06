@@ -31,3 +31,11 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Sistema y locales ###
+.DS_Store
+.env
+*.class
+*.bak
+*~
+*.orig
