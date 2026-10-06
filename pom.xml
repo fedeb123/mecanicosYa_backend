@@ -20,6 +20,7 @@
     <description>Backend distribuido para el trabajo práctico de Desarrollo de Aplicaciones II</description>
 
     <modules>
+        <module>shared-observability</module>
     </modules>
 
     <properties>
