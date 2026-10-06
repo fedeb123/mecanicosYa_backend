@@ -40,5 +40,31 @@ services:
       timeout: 5s
       retries: 20
 
+  dispatch-service:
+    restart: on-failure
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile
+      args:
+        MODULE: dispatch-service
+    environment:
+      SERVER_PORT: 8083
+      DB_URL: jdbc:postgresql://postgres:5432/dispatch_db
+      DB_USERNAME: dispatch_user
+      DB_PASSWORD: dispatch_pass
+      SPRING_DATASOURCE_HIKARI_INITIALIZATION_FAIL_TIMEOUT: 60000
+      MECHANIC_SERVICE_URL: http://mechanic-service:8081
+      DISPATCH_MATCHING_STRATEGY: nearest
+    ports:
+      - "8083:8083"
+    depends_on:
+      mechanic-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8083/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
 volumes:
   mecanicosya-postgres-data:
