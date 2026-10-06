@@ -1,39 +1,34 @@
 # MecanicosYa - Backend
-Trabajo Practico Obligatorio para la materia de Desarollo de Aplicaciones II en UADE. Este repositorio servirá como Backend para la aplicación de MecanicosYa
 
-## Estructura Modelo de Archivos de la Aplicación
+Trabajo Práctico Obligatorio de Desarrollo de Aplicaciones II (UADE). Backend de MecanicosYa: conecta repartidores cuyo vehículo se averió con mecánicos que pueden ir hasta su ubicación.
+
+## Stack
+
+- Java 25 y Spring Boot 4.1.1
+- Maven multi-módulo (`./mvnw`)
+- PostgreSQL + PostGIS, una base por servicio
+- Docker Compose
+
+## Estructura
 
 ```
 mecanicosYa_backend/
-├── src/main/java/com/uade/mecanicosYa
-│   ├── domain/                  # Lógica de negocio (Libre de frameworks)
-│   │   ├── models/              # Entidades puras (Averia, Mecanico, Repartidor)
-│   │   ├── exceptions/          # Excepciones propias del dominio
-│   │   └── repositories/        # Interfaces de acceso a datos (Inversión de dependencias)
-│   │
-│   ├── application/             # Casos de uso y orquestación
-│   │   ├── services/            # Implementación de lógica (AveriaService, IAClasificacionService)
-│   │   └── dtos/                # Objetos de transferencia de datos para aislar el dominio
-│   │
-│   ├── infrastructure/          # Detalles técnicos, frameworks y bases de datos
-│   │   ├── controllers/         # Endpoints REST (Swagger/OpenAPI)
-│   │   ├── soap/                # Endpoints y configuración SOAP
-│   │   ├── messaging/           # Productores y consumidores (RabbitMQ/Kafka)
-│   │   ├── persistence/         # Implementación de los repositories (Spring Data JPA, Entidades DB)
-│   │   └── clients/             # Consumo de APIs externas (Geolocalización, API de IA)
-│   │
-│   └── config/                  # Configuraciones de Spring, Beans, Seguridad, Swagger
-│
-├── src/main/resources/
-│   ├── application.yml          # Configuración externalizada (DB, Colas, URLs de APIs)
-│   └── wsdl/                    # Contratos SOAP
-│
-├── Dockerfile                   # Empaquetado de la aplicación
-├── docker-compose.yml           # Levantar DB, RabbitMQ y la app
-└── pom.xml / build.gradle       # Gestión de dependencias (Maven o Gradle)
+├── pom.xml                  # Proyecto padre: versiones y módulos
+├── shared-observability/    # Correlation id compartido por todos los servicios
+├── infra/
+│   ├── docker/Dockerfile    # Imagen genérica, recibe el módulo como argumento
+│   └── postgres/            # Script que crea las bases de cada servicio
+└── docker-compose.yml
 ```
 
+Cada microservicio se suma como módulo con sus capas `api`, `application`, `domain` e `infrastructure`.
+
 ## Requisitos
-- Java 21
-- SpringBoot 4.1.1
-- Maven
+
+- JDK 25
+- Docker Desktop con Docker Compose
+
+```bash
+./mvnw clean verify
+docker compose up --build
+```
