@@ -1,9 +1,14 @@
 package com.uade.mecanicosya.assistance.api;
 
+import com.uade.mecanicosya.assistance.application.AssistanceNotFoundException;
 import com.uade.mecanicosya.assistance.application.ClientNotFoundException;
+import com.uade.mecanicosya.assistance.application.DispatchFailedException;
+import com.uade.mecanicosya.assistance.application.DispatchUnavailableException;
 import com.uade.mecanicosya.assistance.application.DuplicateClientException;
 import com.uade.mecanicosya.assistance.application.VehicleNotFoundException;
 import com.uade.mecanicosya.assistance.domain.InvalidStatusTransitionException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -17,7 +22,10 @@ import java.util.TreeMap;
 @RestControllerAdvice
 public class AssistanceExceptionHandler {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(AssistanceExceptionHandler.class);
+
     @ExceptionHandler({
+            AssistanceNotFoundException.class,
             ClientNotFoundException.class,
             VehicleNotFoundException.class
     })
@@ -59,4 +67,22 @@ public class AssistanceExceptionHandler {
         return problem;
     }
 
+    @ExceptionHandler(DispatchUnavailableException.class)
+    ProblemDetail dispatchUnavailable(DispatchUnavailableException exception) {
+        LOGGER.warn("dispatch-service is not reachable", exception);
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.SERVICE_UNAVAILABLE,
+                "dispatch-service is not available; the assistance stays REQUESTED and the dispatch can be retried"
+        );
+        problem.setTitle("Dispatch service unavailable");
+        return problem;
+    }
+
+    @ExceptionHandler(DispatchFailedException.class)
+    ProblemDetail dispatchFailed(DispatchFailedException exception) {
+        LOGGER.warn("dispatch-service answered with an error", exception);
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_GATEWAY, exception.getMessage());
+        problem.setTitle("Dispatch service error");
+        return problem;
+    }
 }
