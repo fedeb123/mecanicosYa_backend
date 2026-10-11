@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MecanicosYa · Consola de pruebas</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header>
+  <div>
+    <h1>MecanicosYa · Consola de pruebas</h1>
+    <p class="subtitle">Herramienta para probar los microservicios a mano. No es la app final.</p>
+  </div>
+  <div class="services" id="services">
+    <span class="service" data-service="mechanic">mechanic-service</span>
+    <span class="service" data-service="assistance">assistance-service</span>
+    <span class="service" data-service="dispatch">dispatch-service</span>
+    <button type="button" class="ghost" id="refresh-health">Actualizar</button>
+  </div>
+</header>
+
+<nav class="tabs">
+  <button type="button" data-tab="mechanics" class="active">Mecánicos</button>
+  <button type="button" data-tab="clients">Clientes y vehículos</button>
+  <button type="button" data-tab="assistances">Asistencias</button>
+  <button type="button" data-tab="demo">Demo rápida</button>
+</nav>
+
+<main>
+  <div class="panels">
+
+    <!-- Mecánicos -->
+    <section class="panel active" data-panel="mechanics">
+      <div class="card">
+        <h2>Alta de mecánico</h2>
+        <form id="form-mechanic">
+          <label>Nombre <input name="name" required value="Ada Mecánica"></label>
+          <label>Email <input name="email" type="email" required></label>
+          <div class="row">
+            <label>Ubicación <select class="location-preset" data-lat="latitude" data-lon="longitude"></select></label>
+            <label>Latitud <input name="latitude" type="number" step="any" required value="-34.6038"></label>
+            <label>Longitud <input name="longitude" type="number" step="any" required value="-58.3820"></label>
+          </div>
+          <label>Habilidades (separadas por coma) <input name="skills" required value="CHAIN_REPAIR, TIRE_REPAIR"></label>
+          <fieldset>
+            <legend>Tipos de vehículo</legend>
+            <label class="inline"><input type="checkbox" name="vehicleTypes" value="BICYCLE" checked> Bicicleta</label>
+            <label class="inline"><input type="checkbox" name="vehicleTypes" value="E_BIKE"> Bici eléctrica</label>
+            <label class="inline"><input type="checkbox" name="vehicleTypes" value="MOTORCYCLE"> Moto</label>
+          </fieldset>
+          <button type="submit">Registrar mecánico</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>Disponibilidad y ubicación</h2>
+        <form id="form-availability">
+          <label>Mecánico <select name="mechanicId" class="select-mechanic" required></select></label>
+          <label class="inline"><input type="checkbox" name="available" checked> Disponible</label>
+          <div class="row">
+            <label>Ubicación <select class="location-preset" data-lat="latitude" data-lon="longitude"></select></label>
+            <label>Latitud <input name="latitude" type="number" step="any" required value="-34.6038"></label>
+            <label>Longitud <input name="longitude" type="number" step="any" required value="-58.3820"></label>
+          </div>
+          <div class="actions">
+            <button type="submit">Actualizar disponibilidad</button>
+            <button type="button" class="ghost" id="btn-get-mechanic">Ver mecánico</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card wide">
+        <h2>Buscar candidatos</h2>
+        <form id="form-candidates" class="row">
+          <label>Habilidad <input name="skill" required value="CHAIN_REPAIR"></label>
+          <label>Tipo de vehículo
+            <select name="vehicleType">
+              <option value="">(cualquiera)</option>
+              <option value="BICYCLE">Bicicleta</option>
+              <option value="E_BIKE">Bici eléctrica</option>
+              <option value="MOTORCYCLE">Moto</option>
+            </select>
+          </label>
+          <button type="submit">Buscar</button>
+        </form>
+        <div id="candidates-result"></div>
+      </div>
+    </section>
+
+    <!-- Clientes -->
+    <section class="panel" data-panel="clients">
+      <div class="card">
+        <h2>Alta de cliente (repartidor)</h2>
+        <form id="form-client">
+          <label>Nombre completo <input name="fullName" required value="Repartidor Demo"></label>
+          <label>Teléfono <input name="phone" required value="1155550000"></label>
+          <label>Email <input name="email" type="email" required></label>
+          <button type="submit">Registrar cliente</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>Alta de vehículo</h2>
+        <form id="form-vehicle">
+          <label>Cliente <select name="clientId" class="select-client" required></select></label>
+          <label>Tipo
+            <select name="type">
+              <option value="BICYCLE">Bicicleta</option>
+              <option value="E_BIKE">Bici eléctrica</option>
+              <option value="MOTORCYCLE">Moto (requiere patente)</option>
+            </select>
+          </label>
+          <div class="row">
+            <label>Marca <input name="brand" required value="Trek"></label>
+            <label>Modelo <input name="model" required value="FX 2"></label>
+          </div>
+          <div class="row">
+            <label>Color <input name="color" value="Negra"></label>
+            <label>Patente <input name="plate" placeholder="solo motos"></label>
+          </div>
+          <div class="actions">
+            <button type="submit">Registrar vehículo</button>
+            <button type="button" class="ghost" id="btn-list-vehicles">Ver vehículos del cliente</button>
+          </div>
+        </form>
+        <div id="vehicles-result"></div>
+      </div>
+    </section>
+
+    <!-- Asistencias -->
+    <section class="panel" data-panel="assistances">
+      <div class="card">
+        <h2>Pedir asistencia</h2>
+        <form id="form-assistance">
+          <label>Cliente <select name="clientId" class="select-client" required></select></label>
+          <label>Vehículo <select name="vehicleId" class="select-vehicle" required></select></label>
+          <label>Descripción <textarea name="description" required rows="2">Se cortó la cadena en el centro</textarea></label>
+          <div class="row">
+            <label>Tipo de problema <input name="problemType" required value="CHAIN"></label>
+            <label>Habilidad requerida <input name="requiredSkill" required value="CHAIN_REPAIR"></label>
+          </div>
+          <div class="row">
+            <label>Ubicación <select class="location-preset" data-lat="latitude" data-lon="longitude"></select></label>
+            <label>Latitud <input name="latitude" type="number" step="any" required value="-34.6037"></label>
+            <label>Longitud <input name="longitude" type="number" step="any" required value="-58.3816"></label>
+          </div>
+          <button type="submit">Pedir asistencia</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>Seguimiento</h2>
+        <form id="form-track">
+          <label>Asistencia <select name="assistanceId" class="select-assistance"></select></label>
+          <label>o pegar un id <input name="manualId" placeholder="uuid"></label>
+          <div class="actions">
+            <button type="submit">Consultar</button>
+            <button type="button" data-action="dispatch" class="ghost">Reintentar despacho</button>
+            <button type="button" data-action="start" class="ghost">Iniciar</button>
+            <button type="button" data-action="complete" class="ghost">Completar</button>
+            <button type="button" data-action="cancel" class="ghost danger">Cancelar</button>
+          </div>
+        </form>
+        <div id="track-result"></div>
+      </div>
+    </section>
+
+    <!-- Demo -->
+    <section class="panel" data-panel="demo">
+      <div class="card wide">
+        <h2>Demo rápida</h2>
+        <p>Hace el mismo recorrido que <code>scripts/demo.sh</code>: registra dos mecánicos y los pone disponibles,
+          registra un cliente con su bicicleta, pide una asistencia de cadena y muestra el despacho y el historial.
+          Todo va con el mismo <code>X-Correlation-Id</code> para seguirlo en los logs.</p>
+        <button type="button" id="btn-demo">Correr demo</button>
+        <div id="demo-result"></div>
+      </div>
+      <div class="card wide">
+        <h2>Datos guardados en este navegador</h2>
+        <p>Los servicios no tienen endpoints de listado, así que el front recuerda los ids que fue creando
+          para llenar los desplegables.</p>
+        <button type="button" class="ghost danger" id="btn-clear-store">Olvidar ids guardados</button>
+      </div>
+    </section>
+  </div>
+
+  <aside class="log">
+    <div class="log-header">
+      <h2>Requests</h2>
+      <button type="button" class="ghost" id="btn-clear-log">Limpiar</button>
+    </div>
+    <ol id="log"></ol>
+  </aside>
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>
