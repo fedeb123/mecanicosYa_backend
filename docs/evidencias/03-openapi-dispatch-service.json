@@ -1,0 +1,142 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "OpenAPI definition",
+    "version": "v0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8083",
+      "description": "Generated server url"
+    }
+  ],
+  "paths": {
+    "/api/dispatches": {
+      "post": {
+        "tags": [
+          "Dispatch"
+        ],
+        "summary": "Match an assistance with an available qualified mechanic",
+        "operationId": "dispatch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DispatchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DispatchResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dispatches/{assistanceId}": {
+      "get": {
+        "tags": [
+          "Dispatch"
+        ],
+        "summary": "Get the asynchronous matching result",
+        "operationId": "find",
+        "parameters": [
+          {
+            "name": "assistanceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DispatchResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "DispatchRequest": {
+        "type": "object",
+        "properties": {
+          "assistanceId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "requiredSkill": {
+            "type": "string",
+            "minLength": 1
+          },
+          "latitude": {
+            "type": "number",
+            "format": "double",
+            "maximum": 90.0,
+            "minimum": -90.0
+          },
+          "longitude": {
+            "type": "number",
+            "format": "double",
+            "maximum": 180.0,
+            "minimum": -180.0
+          },
+          "vehicleType": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "assistanceId",
+          "requiredSkill"
+        ]
+      },
+      "DispatchResponse": {
+        "type": "object",
+        "properties": {
+          "assistanceId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "mechanicId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "distanceKm": {
+            "type": "number",
+            "format": "double"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "MATCHED",
+              "NO_CANDIDATE"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    }
+  }
+}

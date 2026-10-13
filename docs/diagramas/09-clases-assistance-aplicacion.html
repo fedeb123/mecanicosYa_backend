@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clases de aplicación · assistance-service</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:   #f5f5f5;
+      --color-ink:     #2d3142;
+      --color-muted:   #4f5d75;
+      --color-accent:  #eb6c36;
+      --font-sans:     'Geist', system-ui, sans-serif;
+      --font-serif:    'Instrument Serif', serif;
+      --font-mono:     'Geist Mono', ui-monospace, monospace;
+    }
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-paper);
+      color: var(--color-ink);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 2rem;
+    }
+    .frame { max-width: 1200px; width: 100%; }
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-muted);
+      margin-bottom: 0.5rem;
+    }
+    h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem);
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      color: var(--color-ink);
+      margin-bottom: 0.5rem;
+    }
+    .subtitle { color: var(--color-muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
+    h1 + svg { margin-top: 1rem; }
+    svg { width: 100%; min-width: 900px; display: block; }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Clases · assistance-service · MecanicosYa · Desarrollo de Aplicaciones II</p>
+    <h1>Clases de aplicación · assistance-service</h1>
+    <p class="subtitle">Observer con eventos de Spring y acceso remoto detrás del puerto DispatchPort.</p>
+<svg viewBox="0 32 1040 896" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="clases-assistance-aplicacion-title clases-assistance-aplicacion-desc">
+<title id="clases-assistance-aplicacion-title">Diagrama de clases · assistance-service · aplicación</title>
+<desc id="clases-assistance-aplicacion-desc">Clases de la capa de servicios de assistance-service: la fachada publica eventos que escuchan el coordinador de despacho y el registrador de historial; el coordinador usa el puerto DispatchPort, implementado por DispatchRestClient.</desc>
+<defs>
+<marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+<marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+<marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+<marker id="arrow-open" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polyline points="0 0, 8 3, 0 6" fill="none" stroke="#4f5d75" stroke-width="1.2"/></marker>
+</defs>
+<rect x="0" y="32" width="1040" height="896" fill="#f5f5f5"/>
+<path d="M 380,100 H 320" fill="none" stroke="#4f5d75" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#arrow-open)"/>
+<path d="M 660,100 H 720" fill="none" stroke="#4f5d75" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#arrow-open)"/>
+<path d="M 180,208 V 360" fill="none" stroke="#4f5d75" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#arrow)"/>
+<path d="M 860,188 V 360" fill="none" stroke="#4f5d75" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#arrow)"/>
+<path d="M 320,400 H 512 Q 520,400 520,392 V 316" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+<path d="M 180,520 V 576" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+<path d="M 320,608 H 380" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+<path d="M 180,728 V 668" fill="none" stroke="#4f5d75" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#arrow)"/>
+<rect x="324" y="82" width="52" height="12" rx="2" fill="#f5f5f5"/><text x="350" y="91" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">PUBLICA</text>
+<rect x="664" y="82" width="52" height="12" rx="2" fill="#f5f5f5"/><text x="690" y="91" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">PUBLICA</text>
+<rect x="186" y="278" width="52" height="12" rx="2" fill="#f5f5f5"/><text x="212" y="287" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">ESCUCHA</text>
+<rect x="866" y="278" width="52" height="12" rx="2" fill="#f5f5f5"/><text x="892" y="287" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">ESCUCHA</text>
+<rect x="526" y="350" width="68" height="12" rx="2" fill="#f5f5f5"/><text x="560" y="359" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">APPLYMATCH</text>
+<rect x="186" y="542" width="28" height="12" rx="2" fill="#f5f5f5"/><text x="200" y="551" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">USA</text>
+<rect x="324" y="614" width="52" height="12" rx="2" fill="#f5f5f5"/><text x="350" y="623" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">RETORNA</text>
+<rect x="186" y="690" width="68" height="12" rx="2" fill="#f5f5f5"/><text x="220" y="699" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">IMPLEMENTA</text>
+<rect x="40" y="56" width="280" height="152" rx="6" fill="#f5f5f5"/><rect x="40" y="56" width="280" height="152" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/><rect x="41" y="57" width="278" height="39" rx="5" fill="rgba(45,49,66,0.05)"/><line x1="40" y1="96" x2="320" y2="96" stroke="#2d3142" stroke-opacity="0.35" stroke-width="1"/><text x="56" y="72" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">«record» EVENTO</text><text x="56" y="88" fill="#2d3142" font-size="14" font-weight="600" font-family="'Geist', sans-serif">AssistanceRequestedEvent</text><text x="56" y="114" fill="#2d3142" font-size="10" font-family="'Geist Mono', monospace">eventId · eventType</text><text x="56" y="134" fill="#2d3142" font-size="10" font-family="'Geist Mono', monospace">occurredAt</text><text x="304" y="134" fill="#4f5d75" font-size="10" font-family="'Geist Mono', monospace" text-anchor="end">Instant</text><text x="56" y="154" fill="#2d3142" font-size="10" font-family="'Geist Mono', monospace">assistanceId</text><text x="304" y="154" fill="#4f5d75" font-size="10" font-family="'Geist Mono', monospace" text-anchor="end">UUID</text><text x="56" y="174" fill="#2d3142" font-size="10" font-family="'Geist Mono', monospace">vehicleType · skill</text><text x="56" y="194" fill="#2d3142" font-size="10" font-family="'Geist Mono', monospace">latitude · longitude</text><text x="304" y="194" fill="#4f5d75" font-size="10" font-family="'Geist Mono', monospace" text-anchor="end">double</text>
+<rect x="380" y="56" width="280" height="260" rx="6" fill="#f5f5f5"/><rect x="380" y="56" width="280" height="260" rx="6" fill="rgba(235,108,54,0.04)" stroke="#eb6c36" stroke-width="1"/><rect x="381" y="57" width="278" height="39" rx="5" fill="rgba(235,108,54,0.10)"/><line x1="380" y1="96" x2="660" y2="96" stroke="#eb6c36" stroke-opacity="0.35" stroke-width="1"/><text x="396" y="72" fill="#eb6c36" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">FACADE · @Service</text><text x="396" y="88" fill="#2d3142" font-size="14" font-weight="600" font-family="'Geist', sans-serif">AssistanceFacade</text><text x="396" y="114" fill="#2d3142" font-size="10" font-family="'Geist Mono', monospace">- repository</text><text x="396" y="134" fill="#2d3142" font-size="10" font-family="'Geist Mono', monospace">- statusChangeRepository</text><text x="396" y="154" fill="#2d3142" font-size="10" font-family="'Geist Mono', monospace">- clientFacade</text><text x="396" y="174" fill="#2d3142" font-size="10" font-family="'Geist Mono', monospace">- factory</text><text x="396" y="194" fill="#2d3142" font-size="10" font-family="'Geist Mono', monospace">- eventPublisher</text><line x1="392" y1="206" x2="648" y2="206" stroke="rgba(45,49,66,0.18)" stroke-width="0.8" stroke-dasharray="3,3"/><text x="396" y="222" fill="#2d3142" font-size="10" font-family="'Geist Mono', monospace">+ request(...) : AssistanceRequest</text><text x="396" y="242" fill="#2d3142" font-size="10" font-family="'Geist Mono', monospace">+ find(id)</text><text x="396" y="262" fill="#2d3142" font-size="10" font-family="'Geist Mono', monospace">+ history(id)</text><text x="396" y="282" fill="#2d3142" font-size="10" font-family="'Geist Mono', monospace">+ applyMatch(id, mechanicId)</text><text x="396" y="302" fill="#2d3142" font-size="10" font-family="'Geist Mono', monospace">+ start · complete · cancel(id)</text>
+<rect x="720" y="56" width="280" height="132" rx="6" fill="#f5f5f5"/><rect x="720" y="56" width="280" height="132" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/><rect x="721" y="57" width="278" height="39" rx="5" fill="rgba(45,49,66,0.05)"/><line x1="720" y1="96" x2="1000" y2="96" stroke="#2d3142" stroke-opacity="0.35" stroke-width="1"/><text x="736" y="72" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">«record» EVENTO</text><text x="736" y="88" fill="#2d3142" font-size="14" font-weight="600" font-family="'Geist', sans-serif">AssistanceStatusChangedEvent</text><text x="736" y="114" fill="#2d3142" font-size="10" font-family="'Geist Mono', monospace">assistanceId</text><text x="984" y="114" fill="#4f5d75" font-size="10" font-family="'Geist Mono', monospace" text-anchor="end">UUID</text><text x="736" y="134" fill="#2d3142" font-size="10" font-family="'Geist Mono', monospace">fromStatus</text><text x="984" y="134" fill="#4f5d75" font-size="10" font-family="'Geist Mono', monospace" text-anchor="end">AssistanceStatus</text><text x="736" y="154" fill="#2d3142" font-size="10" font-family="'Geist Mono', monospace">toStatus</text><text x="984" y="154" fill="#4f5d75" font-size="10" font-family="'Geist Mono', monospace" text-anchor="end">AssistanceStatus</text><text x="736" y="174" fill="#2d3142" font-size="10" font-family="'Geist Mono', monospace">occurredAt</text><text x="984" y="174" fill="#4f5d75" font-size="10" font-family="'Geist Mono', monospace" text-anchor="end">Instant</text>
+<rect x="40" y="360" width="280" height="160" rx="6" fill="#f5f5f5"/><rect x="40" y="360" width="280" height="160" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/><rect x="41" y="361" width="278" height="39" rx="5" fill="rgba(45,49,66,0.05)"/><line x1="40" y1="400" x2="320" y2="400" stroke="#2d3142" stroke-opacity="0.35" stroke-width="1"/><text x="56" y="376" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">OBSERVER · @Component</text><text x="56" y="392" fill="#2d3142" font-size="14" font-weight="600" font-family="'Geist', sans-serif">AssistanceDispatchCoordinator</text><text x="56" y="418" fill="#2d3142" font-size="10" font-family="'Geist Mono', monospace">- assistanceFacade</text><text x="56" y="438" fill="#2d3142" font-size="10" font-family="'Geist Mono', monospace">- dispatchPort</text><line x1="52" y1="450" x2="308" y2="450" stroke="rgba(45,49,66,0.18)" stroke-width="0.8" stroke-dasharray="3,3"/><text x="56" y="466" fill="#2d3142" font-size="10" font-family="'Geist Mono', monospace">+ onAssistanceRequested(e)</text><text x="56" y="486" fill="#2d3142" font-size="10" font-family="'Geist Mono', monospace">  AFTER_COMMIT</text><text x="56" y="506" fill="#2d3142" font-size="10" font-family="'Geist Mono', monospace">+ dispatch(id)</text>
+<rect x="720" y="360" width="280" height="120" rx="6" fill="#f5f5f5"/><rect x="720" y="360" width="280" height="120" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/><rect x="721" y="361" width="278" height="39" rx="5" fill="rgba(45,49,66,0.05)"/><line x1="720" y1="400" x2="1000" y2="400" stroke="#2d3142" stroke-opacity="0.35" stroke-width="1"/><text x="736" y="376" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">OBSERVER · @Component</text><text x="736" y="392" fill="#2d3142" font-size="14" font-weight="600" font-family="'Geist', sans-serif">StatusHistoryRecorder</text><text x="736" y="418" fill="#2d3142" font-size="10" font-family="'Geist Mono', monospace">- statusChangeRepository</text><text x="736" y="438" fill="#2d3142" font-size="10" font-family="'Geist Mono', monospace">- assistanceRepository</text><line x1="732" y1="450" x2="988" y2="450" stroke="rgba(45,49,66,0.18)" stroke-width="0.8" stroke-dasharray="3,3"/><text x="736" y="466" fill="#2d3142" font-size="10" font-family="'Geist Mono', monospace">+ onStatusChanged(e)</text>
+<rect x="40" y="576" width="280" height="92" rx="6" fill="#f5f5f5"/><rect x="40" y="576" width="280" height="92" rx="6" fill="#ffffff" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3"/><rect x="41" y="577" width="278" height="39" rx="5" fill="rgba(45,49,66,0.05)"/><line x1="40" y1="616" x2="320" y2="616" stroke="#4f5d75" stroke-opacity="0.35" stroke-width="1"/><text x="56" y="592" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">«interface» PUERTO</text><text x="56" y="608" fill="#2d3142" font-size="14" font-weight="600" font-family="'Geist', sans-serif">DispatchPort</text><text x="56" y="634" fill="#2d3142" font-size="10" font-family="'Geist Mono', monospace">+ dispatch(command)</text><text x="56" y="654" fill="#2d3142" font-size="10" font-family="'Geist Mono', monospace">    : DispatchOutcome</text>
+<rect x="380" y="576" width="280" height="92" rx="6" fill="#f5f5f5"/><rect x="380" y="576" width="280" height="92" rx="6" fill="#ffffff" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3"/><rect x="381" y="577" width="278" height="39" rx="5" fill="rgba(45,49,66,0.05)"/><line x1="380" y1="616" x2="660" y2="616" stroke="#4f5d75" stroke-opacity="0.35" stroke-width="1"/><text x="396" y="592" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">«sealed interface»</text><text x="396" y="608" fill="#2d3142" font-size="14" font-weight="600" font-family="'Geist', sans-serif">DispatchOutcome</text><text x="396" y="634" fill="#2d3142" font-size="10" font-family="'Geist Mono', monospace">Matched(mechanicId, distanceKm)</text><text x="396" y="654" fill="#2d3142" font-size="10" font-family="'Geist Mono', monospace">NoCandidate()</text>
+<rect x="40" y="728" width="280" height="120" rx="6" fill="#f5f5f5"/><rect x="40" y="728" width="280" height="120" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/><rect x="41" y="729" width="278" height="39" rx="5" fill="rgba(45,49,66,0.05)"/><line x1="40" y1="768" x2="320" y2="768" stroke="#2d3142" stroke-opacity="0.35" stroke-width="1"/><text x="56" y="744" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">ADAPTER · @Component</text><text x="56" y="760" fill="#2d3142" font-size="14" font-weight="600" font-family="'Geist', sans-serif">DispatchRestClient</text><text x="56" y="786" fill="#2d3142" font-size="10" font-family="'Geist Mono', monospace">- restClient : RestClient</text><line x1="52" y1="798" x2="308" y2="798" stroke="rgba(45,49,66,0.18)" stroke-width="0.8" stroke-dasharray="3,3"/><text x="56" y="814" fill="#2d3142" font-size="10" font-family="'Geist Mono', monospace">+ dispatch(command)</text><text x="56" y="834" fill="#2d3142" font-size="10" font-family="'Geist Mono', monospace">POST /api/dispatches</text>
+<line x1="40" y1="864" x2="1000" y2="864" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/><text x="40" y="884" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">LEYENDA</text><rect x="120" y="874" width="20" height="12" rx="3" fill="#f5f5f5"/><rect x="120" y="874" width="20" height="12" rx="3" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1"/><text x="152" y="884" fill="#4f5d75" font-size="9" font-family="'Geist', sans-serif">Fachada</text><rect x="219" y="874" width="20" height="12" rx="3" fill="#f5f5f5"/><rect x="219" y="874" width="20" height="12" rx="3" fill="#ffffff" stroke="#2d3142" stroke-width="1"/><text x="251" y="884" fill="#4f5d75" font-size="9" font-family="'Geist', sans-serif">Clase / record</text><rect x="353" y="874" width="20" height="12" rx="3" fill="#f5f5f5"/><rect x="353" y="874" width="20" height="12" rx="3" fill="#ffffff" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3"/><text x="385" y="884" fill="#4f5d75" font-size="9" font-family="'Geist', sans-serif">Interfaz</text><line x1="457" y1="880" x2="481" y2="880" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/><text x="489" y="884" fill="#4f5d75" font-size="9" font-family="'Geist', sans-serif">Usa</text><line x1="536" y1="880" x2="560" y2="880" stroke="#4f5d75" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#arrow)"/><text x="568" y="884" fill="#4f5d75" font-size="9" font-family="'Geist', sans-serif">Publica / escucha / implementa</text>
+</svg>
+  </div>
+</body>
+</html>

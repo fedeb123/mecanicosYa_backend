@@ -80,12 +80,22 @@ Para compilar y testear fuera de Docker hace falta el JDK 25.
 
 El mismo comando corre en GitHub Actions en cada push y PR a `develop` y `main`.
 
+## Evidencias
+
+```bash
+./scripts/evidencias.sh
+```
+
+Levanta el entorno, ejecuta los escenarios de la entrega (flujo completo, acceso local y remoto, Strategy, errores y fallas remotas) y guarda salidas y capturas en `docs/evidencias/`.
+
 ## Documentación
 
 - [Adaptación exacta de la consigna](docs/CONSIGNA_Y_ALCANCE.md)
 - [Arquitectura y patrones](docs/ARQUITECTURA.md)
 - [Diagrama de clases](docs/DIAGRAMA_DE_CLASES.md)
+- [Diagramas (componentes, despliegue, capas, clases, secuencia, estados)](docs/diagramas/README.md)
 - [Informe de arquitectura de componentes](docs/INFORME_ARQUITECTURA_COMPONENTES.md)
 - [Endpoints](docs/ENDPOINTS.md)
 - [Guía de evidencias](docs/GUIA_DE_EVIDENCIAS.md)
+- [Evidencias de ejecución local y remota](docs/evidencias/README.md)
 

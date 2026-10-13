@@ -1,0 +1,636 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "OpenAPI definition",
+    "version": "v0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8082",
+      "description": "Generated server url"
+    }
+  ],
+  "paths": {
+    "/api/clients": {
+      "post": {
+        "tags": [
+          "Clients"
+        ],
+        "summary": "Register a client",
+        "operationId": "create",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateClientRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/clients/{id}/vehicles": {
+      "get": {
+        "tags": [
+          "Clients"
+        ],
+        "summary": "List a client's vehicles",
+        "operationId": "vehicles",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/VehicleResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Clients"
+        ],
+        "summary": "Register a vehicle for a client (a motorcycle requires a plate)",
+        "operationId": "addVehicle",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateVehicleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/VehicleResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/assistances": {
+      "post": {
+        "tags": [
+          "Assistances"
+        ],
+        "summary": "Create an assistance request and publish its domain event",
+        "operationId": "create_1",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAssistanceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssistanceResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/assistances/{id}/start": {
+      "post": {
+        "tags": [
+          "Assistances"
+        ],
+        "summary": "The assigned mechanic starts the work",
+        "operationId": "start",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssistanceResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/assistances/{id}/dispatch": {
+      "post": {
+        "tags": [
+          "Assistances"
+        ],
+        "summary": "Retry the remote dispatch process",
+        "operationId": "retryDispatch",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssistanceResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/assistances/{id}/complete": {
+      "post": {
+        "tags": [
+          "Assistances"
+        ],
+        "summary": "Mark the assistance as completed",
+        "operationId": "complete",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssistanceResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/assistances/{id}/cancel": {
+      "post": {
+        "tags": [
+          "Assistances"
+        ],
+        "summary": "Cancel an open assistance",
+        "operationId": "cancel",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssistanceResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/clients/{id}": {
+      "get": {
+        "tags": [
+          "Clients"
+        ],
+        "summary": "Get a client",
+        "operationId": "find",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/assistances/{id}": {
+      "get": {
+        "tags": [
+          "Assistances"
+        ],
+        "summary": "Get the current assistance state",
+        "operationId": "find_1",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssistanceResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/assistances/{id}/history": {
+      "get": {
+        "tags": [
+          "Assistances"
+        ],
+        "summary": "Get the status history of an assistance",
+        "operationId": "history",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StatusChangeResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CreateClientRequest": {
+        "type": "object",
+        "properties": {
+          "fullName": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 0
+          },
+          "phone": {
+            "type": "string",
+            "maxLength": 30,
+            "minLength": 0
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 120,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "email",
+          "fullName",
+          "phone"
+        ]
+      },
+      "ClientResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CreateVehicleRequest": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "BICYCLE",
+              "E_BIKE",
+              "MOTORCYCLE"
+            ]
+          },
+          "brand": {
+            "type": "string",
+            "maxLength": 60,
+            "minLength": 0
+          },
+          "model": {
+            "type": "string",
+            "maxLength": 60,
+            "minLength": 0
+          },
+          "color": {
+            "type": "string",
+            "maxLength": 30,
+            "minLength": 0
+          },
+          "plate": {
+            "type": "string",
+            "maxLength": 10,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "brand",
+          "model",
+          "type"
+        ]
+      },
+      "VehicleResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "clientId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "BICYCLE",
+              "E_BIKE",
+              "MOTORCYCLE"
+            ]
+          },
+          "brand": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string"
+          },
+          "plate": {
+            "type": "string"
+          }
+        }
+      },
+      "CreateAssistanceRequest": {
+        "type": "object",
+        "properties": {
+          "clientId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "vehicleId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 0
+          },
+          "problemType": {
+            "type": "string",
+            "minLength": 1
+          },
+          "requiredSkill": {
+            "type": "string",
+            "minLength": 1
+          },
+          "latitude": {
+            "type": "number",
+            "format": "double",
+            "maximum": 90.0,
+            "minimum": -90.0
+          },
+          "longitude": {
+            "type": "number",
+            "format": "double",
+            "maximum": 180.0,
+            "minimum": -180.0
+          }
+        },
+        "required": [
+          "clientId",
+          "description",
+          "problemType",
+          "requiredSkill",
+          "vehicleId"
+        ]
+      },
+      "AssistanceResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "clientId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "vehicleId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "vehicleType": {
+            "type": "string",
+            "enum": [
+              "BICYCLE",
+              "E_BIKE",
+              "MOTORCYCLE"
+            ]
+          },
+          "description": {
+            "type": "string"
+          },
+          "problemType": {
+            "type": "string"
+          },
+          "requiredSkill": {
+            "type": "string"
+          },
+          "latitude": {
+            "type": "number",
+            "format": "double"
+          },
+          "longitude": {
+            "type": "number",
+            "format": "double"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "REQUESTED",
+              "MATCHED",
+              "IN_PROGRESS",
+              "COMPLETED",
+              "CANCELLED"
+            ]
+          },
+          "assignedMechanicId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "StatusChangeResponse": {
+        "type": "object",
+        "properties": {
+          "fromStatus": {
+            "type": "string",
+            "enum": [
+              "REQUESTED",
+              "MATCHED",
+              "IN_PROGRESS",
+              "COMPLETED",
+              "CANCELLED"
+            ]
+          },
+          "toStatus": {
+            "type": "string",
+            "enum": [
+              "REQUESTED",
+              "MATCHED",
+              "IN_PROGRESS",
+              "COMPLETED",
+              "CANCELLED"
+            ]
+          },
+          "changedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    }
+  }
+}

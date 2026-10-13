@@ -15,7 +15,7 @@ Los endpoints quedan listos para que un cliente móvil pueda integrarse posterio
 | Servicios orientados a componentes | Mecánicos, Asistencias y Despacho |
 | Interfaces internas | Puertos `MechanicDirectory` y `DispatchPort` |
 | Eventos de dominio | `AssistanceRequestedEvent` y listener posterior al commit |
-| Modelado de procesos | Diagramas de secuencia y componentes |
+| Modelado de procesos | Diagramas de secuencia, máquina de estados y flujo de decisión del despacho |
 | Arquitectura en capas | API, aplicación, dominio e infraestructura |
 | Aplicación funcional | Flujo registrar mecánico -> pedir asistencia -> asignar mecánico |
 | Documentación de patrones | Tabla y referencias en `ARQUITECTURA.md` |
@@ -37,7 +37,7 @@ Los endpoints quedan listos para que un cliente móvil pueda integrarse posterio
 
 ## Fuera de alcance de esta parte
 
-- Aplicación Android o frontend.
+- Aplicación Android (el repositorio incluye sólo una consola web de pruebas).
 - SOAP y WSDL.
 - RabbitMQ, Kafka u otra cola.
 - API externa real.

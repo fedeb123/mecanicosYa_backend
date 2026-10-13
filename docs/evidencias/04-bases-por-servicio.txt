@@ -1,0 +1,43 @@
+# E04 · Una base de datos por servicio (componente de acceso a datos)
+# 2026-10-12 21:27:50 -0300 · commit 4c196b1
+
+$ docker compose exec postgres psql -U mecanicosya_admin -d mechanics_db -c '\dt'
+                      List of relations
+ Schema |          Name          | Type  |       Owner       
+--------+------------------------+-------+-------------------
+ public | mechanic_skills        | table | mechanics_user
+ public | mechanic_vehicle_types | table | mechanics_user
+ public | mechanics              | table | mechanics_user
+ public | spatial_ref_sys        | table | mecanicosya_admin
+(4 rows)
+
+$ docker compose exec postgres psql -U mecanicosya_admin -d assistances_db -c '\dt'
+                       List of relations
+ Schema |           Name            | Type  |       Owner       
+--------+---------------------------+-------+-------------------
+ public | assistance_requests       | table | assistances_user
+ public | assistance_status_changes | table | assistances_user
+ public | clients                   | table | assistances_user
+ public | spatial_ref_sys           | table | mecanicosya_admin
+ public | vehicles                  | table | assistances_user
+(5 rows)
+
+$ docker compose exec postgres psql -U mecanicosya_admin -d dispatch_db -c '\dt'
+                   List of relations
+ Schema |       Name       | Type  |       Owner       
+--------+------------------+-------+-------------------
+ public | dispatch_matches | table | dispatch_user
+ public | spatial_ref_sys  | table | mecanicosya_admin
+(2 rows)
+
+$ docker compose exec postgres psql -U mecanicosya_admin -d assistances_db -c 'select from_status, to_status, changed_at from assistance_status_changes order by changed_at desc limit 6'
+ from_status |  to_status  |          changed_at           
+-------------+-------------+-------------------------------
+ REQUESTED   | MATCHED     | 2026-10-13 00:27:49.794855+00
+             | REQUESTED   | 2026-10-13 00:27:49.768208+00
+ IN_PROGRESS | COMPLETED   | 2026-10-13 00:27:43.611143+00
+ MATCHED     | IN_PROGRESS | 2026-10-13 00:27:43.307369+00
+ REQUESTED   | MATCHED     | 2026-10-13 00:27:43.048911+00
+             | REQUESTED   | 2026-10-13 00:27:42.997549+00
+(6 rows)
+
