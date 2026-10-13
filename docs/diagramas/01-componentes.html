@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Diagrama de componentes</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:   #f5f5f5;
+      --color-ink:     #2d3142;
+      --color-muted:   #4f5d75;
+      --color-accent:  #eb6c36;
+      --font-sans:     'Geist', system-ui, sans-serif;
+      --font-serif:    'Instrument Serif', serif;
+      --font-mono:     'Geist Mono', ui-monospace, monospace;
+    }
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-paper);
+      color: var(--color-ink);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 2rem;
+    }
+    .frame { max-width: 1200px; width: 100%; }
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-muted);
+      margin-bottom: 0.5rem;
+    }
+    h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem);
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      color: var(--color-ink);
+      margin-bottom: 0.5rem;
+    }
+    .subtitle { color: var(--color-muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
+    h1 + svg { margin-top: 1rem; }
+    svg { width: 100%; min-width: 900px; display: block; }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Componentes · MecanicosYa · Desarrollo de Aplicaciones II</p>
+    <h1>Diagrama de componentes</h1>
+    <p class="subtitle">Tres microservicios independientes, una base lógica por servicio y una librería transversal.</p>
+<svg viewBox="0 56 1040 592" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="componentes-title componentes-desc">
+<title id="componentes-title">Diagrama de componentes</title>
+<desc id="componentes-desc">Componentes del backend: tres microservicios Spring Boot con su base de datos, la librería compartida shared-observability y los clientes REST que los consumen.</desc>
+<defs>
+<marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+<marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+<marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+<marker id="arrow-open" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polyline points="0 0, 8 3, 0 6" fill="none" stroke="#4f5d75" stroke-width="1.2"/></marker>
+</defs>
+<rect x="0" y="56" width="1040" height="592" fill="#f5f5f5"/>
+<path d="M 200,144 H 320" fill="none" stroke="#2e5aa8" stroke-width="1.2" marker-end="url(#arrow-link)"/>
+<path d="M 200,320 H 320" fill="none" stroke="#2e5aa8" stroke-width="1.2" marker-end="url(#arrow-link)"/>
+<path d="M 200,496 H 320" fill="none" stroke="#2e5aa8" stroke-width="1.2" marker-end="url(#arrow-link)"/>
+<path d="M 440,192 V 272" fill="none" stroke="#2e5aa8" stroke-width="1.2" marker-end="url(#arrow-link)"/>
+<path d="M 440,368 V 448" fill="none" stroke="#2e5aa8" stroke-width="1.2" marker-end="url(#arrow-link)"/>
+<path d="M 560,168 H 640" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+<path d="M 560,344 H 640" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+<path d="M 560,520 H 640" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+<path d="M 560,120 H 848" fill="none" stroke="#4f5d75" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#arrow)"/>
+<path d="M 560,296 H 848" fill="none" stroke="#4f5d75" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#arrow)"/>
+<path d="M 560,472 H 848" fill="none" stroke="#4f5d75" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#arrow)"/>
+<rect x="242" y="126" width="36" height="12" rx="2" fill="#f5f5f5"/><text x="260" y="135" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">REST</text>
+<rect x="242" y="302" width="36" height="12" rx="2" fill="#f5f5f5"/><text x="260" y="311" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">REST</text>
+<rect x="242" y="478" width="36" height="12" rx="2" fill="#f5f5f5"/><text x="260" y="487" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">REST</text>
+<rect x="446" y="226" width="100" height="12" rx="2" fill="#f5f5f5"/><text x="496" y="235" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">POST /DISPATCHES</text>
+<rect x="446" y="402" width="92" height="12" rx="2" fill="#f5f5f5"/><text x="492" y="411" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">GET /CANDIDATES</text>
+<rect x="586" y="150" width="28" height="12" rx="2" fill="#f5f5f5"/><text x="600" y="159" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">JPA</text>
+<rect x="586" y="326" width="28" height="12" rx="2" fill="#f5f5f5"/><text x="600" y="335" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">JPA</text>
+<rect x="586" y="502" width="28" height="12" rx="2" fill="#f5f5f5"/><text x="600" y="511" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">JPA</text>
+<rect x="706" y="102" width="28" height="12" rx="2" fill="#f5f5f5"/><text x="720" y="111" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">USA</text>
+<rect x="706" y="278" width="28" height="12" rx="2" fill="#f5f5f5"/><text x="720" y="287" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">USA</text>
+<rect x="706" y="454" width="28" height="12" rx="2" fill="#f5f5f5"/><text x="720" y="463" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">USA</text>
+<rect x="40" y="96" width="160" height="448" rx="6" fill="#f5f5f5"/><rect x="40" y="96" width="160" height="448" rx="6" fill="rgba(79,93,117,0.10)" stroke="#7a8399" stroke-width="1"/><rect x="48" y="104" width="52" height="12" rx="2" fill="transparent" stroke="#4f5d75" stroke-opacity="0.45" stroke-width="0.8"/><text x="74" y="113" fill="#4f5d75" fill-opacity="0.85" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">CLIENTES</text><text x="120" y="311" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Clientes REST</text><text x="120" y="327" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">consola web · :8080</text><text x="120" y="341" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">Swagger UI</text><text x="120" y="355" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">curl · demo.sh</text>
+<rect x="320" y="96" width="240" height="96" rx="6" fill="#f5f5f5"/><rect x="320" y="96" width="240" height="96" rx="6" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1"/><rect x="328" y="104" width="72" height="12" rx="2" fill="transparent" stroke="#eb6c36" stroke-opacity="0.45" stroke-width="0.8"/><text x="364" y="113" fill="#eb6c36" fill-opacity="0.85" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">MICROSERVICIO</text><text x="440" y="142" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">assistance-service</text><text x="440" y="158" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">:8082 · /api/assistances</text><text x="440" y="172" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">/api/clients</text>
+<rect x="320" y="272" width="240" height="96" rx="6" fill="#f5f5f5"/><rect x="320" y="272" width="240" height="96" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/><rect x="328" y="280" width="72" height="12" rx="2" fill="transparent" stroke="#2d3142" stroke-opacity="0.45" stroke-width="0.8"/><text x="364" y="289" fill="#2d3142" fill-opacity="0.85" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">MICROSERVICIO</text><text x="440" y="325" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">dispatch-service</text><text x="440" y="341" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">:8083 · /api/dispatches</text>
+<rect x="320" y="448" width="240" height="96" rx="6" fill="#f5f5f5"/><rect x="320" y="448" width="240" height="96" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/><rect x="328" y="456" width="72" height="12" rx="2" fill="transparent" stroke="#2d3142" stroke-opacity="0.45" stroke-width="0.8"/><text x="364" y="465" fill="#2d3142" fill-opacity="0.85" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">MICROSERVICIO</text><text x="440" y="501" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">mechanic-service</text><text x="440" y="517" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">:8081 · /api/mechanics</text>
+<rect x="640" y="144" width="160" height="48" rx="6" fill="#f5f5f5"/><rect x="640" y="144" width="160" height="48" rx="6" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1"/><text x="720" y="165" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">assistances_db</text><text x="720" y="181" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">PostgreSQL</text>
+<rect x="640" y="320" width="160" height="48" rx="6" fill="#f5f5f5"/><rect x="640" y="320" width="160" height="48" rx="6" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1"/><text x="720" y="341" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">dispatch_db</text><text x="720" y="357" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">PostgreSQL</text>
+<rect x="640" y="496" width="160" height="48" rx="6" fill="#f5f5f5"/><rect x="640" y="496" width="160" height="48" rx="6" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1"/><text x="720" y="517" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">mechanics_db</text><text x="720" y="533" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">PostgreSQL</text>
+<rect x="848" y="96" width="160" height="448" rx="6" fill="#f5f5f5"/><rect x="848" y="96" width="160" height="448" rx="6" fill="rgba(45,49,66,0.03)" stroke="rgba(45,49,66,0.30)" stroke-width="1"/><rect x="856" y="104" width="52" height="12" rx="2" fill="transparent" stroke="#4f5d75" stroke-opacity="0.45" stroke-width="0.8"/><text x="882" y="113" fill="#4f5d75" fill-opacity="0.85" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">LIBRERÍA</text><text x="928" y="311" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">shared-observability</text><text x="928" y="327" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">módulo Maven</text><text x="928" y="341" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">CorrelationIdFilter</text><text x="928" y="355" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">CorrelationIdPropagator</text>
+<line x1="40" y1="592" x2="1000" y2="592" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/><text x="40" y="612" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">LEYENDA</text><rect x="120" y="602" width="20" height="12" rx="3" fill="#f5f5f5"/><rect x="120" y="602" width="20" height="12" rx="3" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1"/><text x="152" y="612" fill="#4f5d75" font-size="9" font-family="'Geist', sans-serif">Entrada del flujo principal</text><rect x="320" y="602" width="20" height="12" rx="3" fill="#f5f5f5"/><rect x="320" y="602" width="20" height="12" rx="3" fill="#ffffff" stroke="#2d3142" stroke-width="1"/><text x="352" y="612" fill="#4f5d75" font-size="9" font-family="'Geist', sans-serif">Microservicio</text><rect x="449" y="602" width="20" height="12" rx="3" fill="#f5f5f5"/><rect x="449" y="602" width="20" height="12" rx="3" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1"/><text x="481" y="612" fill="#4f5d75" font-size="9" font-family="'Geist', sans-serif">Base de datos</text><line x1="578" y1="608" x2="602" y2="608" stroke="#2e5aa8" stroke-width="1.2" marker-end="url(#arrow-link)"/><text x="610" y="612" fill="#4f5d75" font-size="9" font-family="'Geist', sans-serif">HTTP / REST</text><line x1="697" y1="608" x2="721" y2="608" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/><text x="729" y="612" fill="#4f5d75" font-size="9" font-family="'Geist', sans-serif">JPA</text><line x1="776" y1="608" x2="800" y2="608" stroke="#4f5d75" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#arrow)"/><text x="808" y="612" fill="#4f5d75" font-size="9" font-family="'Geist', sans-serif">Dependencia Maven</text>
+</svg>
+  </div>
+</body>
+</html>

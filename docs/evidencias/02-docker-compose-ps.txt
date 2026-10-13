@@ -1,0 +1,18 @@
+# E02 · Contenedores levantados con Docker Compose
+# 2026-10-12 21:13:36 -0300 · commit dbf6c9b
+
+$ docker compose ps
+SERVICE              IMAGE                                    STATUS                    PORTS
+assistance-service   mecanicosya_backend-assistance-service   Up 10 seconds (healthy)   0.0.0.0:8082->8082/tcp, [::]:8082->8082/tcp
+dispatch-service     mecanicosya_backend-dispatch-service     Up 21 seconds (healthy)   0.0.0.0:8083->8083/tcp, [::]:8083->8083/tcp
+frontend             nginx:1.27-alpine                        Up 6 minutes              0.0.0.0:8080->80/tcp, [::]:8080->80/tcp
+mechanic-service     mecanicosya_backend-mechanic-service     Up 31 seconds (healthy)   0.0.0.0:8081->8081/tcp, [::]:8081->8081/tcp
+postgres             postgis/postgis:16-3.4                   Up 6 minutes (healthy)    5432/tcp
+
+$ docker compose images
+CONTAINER                                  REPOSITORY                               TAG                 PLATFORM            IMAGE ID            SIZE                CREATED
+mecanicosya_backend-assistance-service-1   mecanicosya_backend-assistance-service   latest              linux/arm64         f9fc23731a83        634MB               35 seconds ago
+mecanicosya_backend-dispatch-service-1     mecanicosya_backend-dispatch-service     latest              linux/arm64         829632045e88        634MB               35 seconds ago
+mecanicosya_backend-frontend-1             nginx                                    1.27-alpine         linux/arm64/v8      65645c7bb6a0        75.9MB              18 months ago
+mecanicosya_backend-mechanic-service-1     mecanicosya_backend-mechanic-service     latest              linux/arm64         51c7f8cd1261        634MB               35 seconds ago
+mecanicosya_backend-postgres-1             postgis/postgis                          16-3.4              linux/amd64         44126d872ac9        853MB               24 months ago

@@ -1,5 +1,13 @@
 # Guía de evidencias
 
+Las evidencias de texto y las capturas se generan con un solo comando (requiere Docker Desktop):
+
+```bash
+./scripts/evidencias.sh
+```
+
+El resultado queda en [`evidencias/`](evidencias/README.md). El listado de abajo sirve como guía para la defensa.
+
 ## Capturas recomendadas
 
 1. `docker compose ps` con PostgreSQL y los tres servicios saludables.

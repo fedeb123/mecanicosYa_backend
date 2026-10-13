@@ -2,55 +2,25 @@
 
 ## Vista de componentes
 
-```mermaid
-flowchart LR
-    CLIENT[Cliente REST futuro<br/>Android o Swagger]
-    CLIENT -->|REST| MECH[mechanic-service :8081]
-    CLIENT -->|REST| ASSIST[assistance-service :8082]
-    CLIENT -->|REST| DISPATCH[dispatch-service :8083]
-
-    ASSIST -->|evento interno| OBS[AssistanceDispatchCoordinator]
-    OBS -->|REST remoto| DISPATCH
-    DISPATCH -->|REST remoto| MECH
-
-    MECH --> MDB[(mechanics_db)]
-    ASSIST --> ADB[(assistances_db)]
-    DISPATCH --> DDB[(dispatch_db)]
-```
+![Diagrama de componentes](diagramas/png/01-componentes.png)
 
 ## Flujo principal
 
-```mermaid
-sequenceDiagram
-    participant C as Cliente
-    participant A as assistance-service
-    participant E as AssistanceDispatchCoordinator
-    participant D as dispatch-service
-    participant M as mechanic-service
-
-    C->>M: POST /api/mechanics
-    C->>M: PATCH /api/mechanics/{id}/availability
-    C->>A: POST /api/clients
-    C->>A: POST /api/clients/{id}/vehicles
-    C->>A: POST /api/assistances (clientId, vehicleId)
-    A->>A: AssistanceFacade: Factory + Repository (estado REQUESTED)
-    A->>A: publica AssistanceRequestedEvent
-    A->>A: commit de la transacción
-    A->>E: evento entregado después del commit
-    E->>D: POST /api/dispatches
-    D->>M: GET /api/mechanics/candidates?skill=...&vehicleType=...
-    M-->>D: candidatos compatibles
-    D->>D: MatchingStrategy + Repository
-    D-->>E: respuesta MATCHED o NO_CANDIDATE (DispatchOutcome)
-    E->>A: applyMatch: estado MATCHED (transacción nueva)
-    A-->>C: 201 Created (cuerpo con el estado inicial REQUESTED)
-    C->>A: GET /api/assistances/{id}
-    A-->>C: asistencia MATCHED con mechanicId
-```
+![Secuencia del pedido de asistencia](diagramas/png/12-secuencia-pedido.png)
 
 El listener corre en el mismo hilo del request, después del commit. Por eso el despacho remoto ocurre antes de que el cliente reciba el `201`, aunque el cuerpo de esa respuesta se arma con el estado inicial `REQUESTED`. El estado actualizado se consulta con `GET /api/assistances/{id}`.
 
 Si `dispatch-service` falla, el coordinador registra el error y la asistencia queda creada en `REQUESTED`: el alta no se revierte. El despacho se reintenta con `POST /api/assistances/{id}/dispatch`.
+
+![Secuencia de falla remota y reintento](diagramas/png/13-secuencia-reintento.png)
+
+### Ciclo de vida de la asistencia
+
+![Máquina de estados de la asistencia](diagramas/png/14-estados-asistencia.png)
+
+### Decisión del despacho
+
+![Flujo de decisión del despacho](diagramas/png/15-flujo-despacho.png)
 
 ### Fallas de un servicio remoto
 
@@ -68,41 +38,7 @@ En el alta (`POST /api/assistances`) el error no se propaga: la asistencia se cr
 
 Los tres servicios usan las mismas cuatro capas. Las dependencias apuntan hacia el dominio: `api` usa `application`, `application` usa `domain`, e `infrastructure` implementa los puertos que define `application`.
 
-```mermaid
-flowchart TB
-    subgraph PRES[Capa de presentación: api]
-        P1[Controladores REST]
-        P2[DTOs y Bean Validation]
-        P3[Manejo de errores con Problem Details]
-    end
-
-    subgraph SERV[Capa de servicios: application]
-        S1[Fachadas con los casos de uso]
-        S2[Eventos de dominio y listeners]
-        S3[Puertos hacia otros servicios]
-    end
-
-    subgraph DOM[Capa de dominio: domain]
-        D1[Entidades y reglas]
-        D2[Factories]
-        D3[Interfaces Repository]
-        D4[Estrategias]
-    end
-
-    subgraph INFRA[Capa de infraestructura: infrastructure]
-        I1[Clientes REST que implementan los puertos]
-        I2[Spring Data JPA y PostgreSQL]
-    end
-
-    TRANS[Transversal: shared-observability, configuración externalizada, logging, actuator]
-
-    PRES --> SERV
-    SERV --> DOM
-    INFRA -.implementa.-> S3
-    INFRA -.implementa.-> D3
-    TRANS -.-> PRES
-    TRANS -.-> SERV
-```
+![Arquitectura en capas](diagramas/png/03-capas.png)
 
 - `api`: controladores, DTOs, validación y errores HTTP. No contiene reglas de negocio.
 - `application`: casos de uso, fachadas, eventos y puertos. Es la capa de servicios que pide la consigna.
@@ -113,113 +49,19 @@ Las entidades usan anotaciones JPA para mantener el ejercicio compacto. Las regl
 
 ### mechanic-service por capa
 
-```mermaid
-flowchart TB
-    subgraph api
-        MC[MechanicController]
-        MDT[MechanicDtos]
-        ME[MechanicExceptionHandler]
-    end
-    subgraph application
-        MF[MechanicFacade]
-    end
-    subgraph domain
-        M[Mechanic / VehicleType]
-        MFA[MechanicFactory]
-        MR[[MechanicRepository]]
-    end
-
-    MC --> MF
-    MF --> MFA
-    MF --> MR
-    MFA -.crea.-> M
-```
+![mechanic-service por capa](diagramas/png/04-capas-mechanic.png)
 
 `mechanic-service` no llama a otros servicios, así que no tiene capa `infrastructure`: su único adaptador es el repositorio de Spring Data.
 
 ### assistance-service por capa
 
-```mermaid
-flowchart TB
-    subgraph api
-        AC[AssistanceController]
-        CC[ClientController]
-        AD[AssistanceDtos / ClientDtos]
-        AE[AssistanceExceptionHandler]
-    end
-    subgraph application
-        AF[AssistanceFacade]
-        CF[ClientFacade]
-        ADC[AssistanceDispatchCoordinator]
-        SHR[StatusHistoryRecorder]
-        EV[AssistanceRequestedEvent]
-        SEV[AssistanceStatusChangedEvent]
-        DP[[DispatchPort]]
-    end
-    subgraph domain
-        AR[AssistanceRequest / AssistanceStatus]
-        CV[Client / Vehicle / VehicleType]
-        SC[StatusChange]
-        AFA[AssistanceFactory]
-        REP[[AssistanceRepository / ClientRepository / VehicleRepository / StatusChangeRepository]]
-    end
-    subgraph infrastructure
-        DRC[DispatchRestClient]
-    end
-
-    AC --> AF
-    AC --> ADC
-    CC --> CF
-    AF --> CF
-    AF --> AFA
-    AF --> REP
-    CF --> REP
-    AF -.publica.-> EV
-    AF -.publica.-> SEV
-    EV -.escucha.-> ADC
-    SEV -.escucha.-> SHR
-    SHR --> REP
-    ADC --> AF
-    ADC --> DP
-    DRC -.implementa.-> DP
-    DRC -->|REST| DS[(dispatch-service)]
-```
+![assistance-service por capa](diagramas/png/05-capas-assistance.png)
 
 ### dispatch-service por capa
 
-```mermaid
-flowchart TB
-    subgraph api
-        DC[DispatchController]
-        DR[DispatchRequest / DispatchResponse]
-        DE[DispatchExceptionHandler]
-    end
-    subgraph application
-        DF[DispatchFacade]
-        MD[[MechanicDirectory]]
-    end
-    subgraph domain
-        DM[DispatchMatch]
-        MS[[MatchingStrategy]]
-        NQ[NearestQualifiedMechanicStrategy]
-        BR[BestRatedNearbyMechanicStrategy]
-        DRE[[DispatchRepository]]
-    end
-    subgraph infrastructure
-        MRC[MechanicRestClient]
-    end
+![dispatch-service por capa](diagramas/png/06-capas-dispatch.png)
 
-    DC --> DF
-    DF --> MD
-    DF --> MS
-    DF --> DRE
-    NQ -.implementa.-> MS
-    BR -.implementa.-> MS
-    MRC -.implementa.-> MD
-    MRC -->|REST| MSV[(mechanic-service)]
-```
-
-Los elementos con doble borde son interfaces.
+Los elementos con borde punteado son interfaces.
 
 ## Patrones exigidos
 
@@ -230,6 +72,8 @@ Los elementos con doble borde son interfaces.
 | Strategy | `MatchingStrategy`, implementada por `NearestQualifiedMechanicStrategy` (el más cercano) y `BestRatedNearbyMechanicStrategy` (el mejor calificado dentro de un radio); la propiedad `dispatch.matching.strategy` elige cuál se usa | Cambiar el algoritmo de selección por configuración, sin tocar `DispatchFacade` |
 | Observer | `AssistanceFacade` publica `AssistanceRequestedEvent`, que escucha `AssistanceDispatchCoordinator` (`@TransactionalEventListener(AFTER_COMMIT)`), y `AssistanceStatusChangedEvent`, que escucha `StatusHistoryRecorder` (`@EventListener`) | Reaccionar a los eventos sin acoplar el alta al despacho ni las transiciones al historial |
 | Facade | `MechanicFacade`, `ClientFacade`, `AssistanceFacade`, `DispatchFacade` | Exponer casos de uso simples a controladores |
+
+![Patrones aplicados](diagramas/png/11-patrones.png)
 
 ## Java moderno en el código
 
@@ -246,29 +90,13 @@ Los elementos con doble borde son interfaces.
 - Local: una fachada invoca Factory, Repository y reglas mediante interfaces Java dentro del proceso.
 - Remoto: `assistance-service` llama a `dispatch-service`, y este llama a `mechanic-service`, mediante HTTP REST.
 
+![Acceso local y remoto](diagramas/png/16-local-remoto.png)
+
 El cliente móvil futuro sólo necesitará conocer los endpoints públicos; no comparte clases Java con el backend.
 
 ## Despliegue
 
-```mermaid
-flowchart TB
-    HOST[Equipo de laboratorio]
-    subgraph Docker[Docker Compose]
-        M[mechanic-service :8081]
-        A[assistance-service :8082]
-        D[dispatch-service :8083]
-        P[(PostgreSQL/PostGIS :5432)]
-    end
+![Diagrama de despliegue](diagramas/png/02-despliegue.png)
 
-    HOST --> M
-    HOST --> A
-    HOST --> D
-    M --> P
-    A --> P
-    D --> P
-    A --> D
-    D --> M
-```
-
-Cada servicio tiene una base lógica, usuario y contraseña independientes. La misma instancia PostgreSQL se comparte únicamente para reducir recursos en el laboratorio.
+Cada servicio tiene una base lógica, usuario y contraseña independientes. La misma instancia PostgreSQL se comparte únicamente para reducir recursos en el laboratorio. El contenedor `frontend` (nginx) sirve la consola de pruebas en el puerto 8080 y hace de proxy hacia los tres servicios.
 

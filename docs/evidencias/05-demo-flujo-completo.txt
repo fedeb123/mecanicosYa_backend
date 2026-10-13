@@ -1,0 +1,40 @@
+# E05 · Flujo completo con scripts/demo.sh
+# 2026-10-12 21:13:40 -0300 · commit dbf6c9b
+
+$ ./scripts/demo.sh
+Asistencia:
+{
+  "id": "d63bac61-1c4f-4989-809d-dc0c4daf8980",
+  "clientId": "3a306c09-34b3-45da-a134-84d5c506416c",
+  "vehicleId": "045d9172-881a-4af8-b5a2-65164f7f0c48",
+  "vehicleType": "BICYCLE",
+  "description": "Se cortó la cadena en el centro",
+  "problemType": "CHAIN",
+  "requiredSkill": "CHAIN_REPAIR",
+  "latitude": -34.6037,
+  "longitude": -58.3816,
+  "status": "MATCHED",
+  "assignedMechanicId": "9a8688fe-770d-4fe6-9021-3cf8380b5227",
+  "createdAt": "2026-10-13T00:13:41.344786Z"
+}
+Despacho:
+{
+  "assistanceId": "d63bac61-1c4f-4989-809d-dc0c4daf8980",
+  "mechanicId": "9a8688fe-770d-4fe6-9021-3cf8380b5227",
+  "distanceKm": 0.04,
+  "status": "MATCHED",
+  "createdAt": "2026-10-13T00:13:41.533265Z"
+}
+Historial de estados:
+[
+  {
+    "fromStatus": null,
+    "toStatus": "REQUESTED",
+    "changedAt": "2026-10-13T00:13:41.348183Z"
+  },
+  {
+    "fromStatus": "REQUESTED",
+    "toStatus": "MATCHED",
+    "changedAt": "2026-10-13T00:13:41.581770Z"
+  }
+]

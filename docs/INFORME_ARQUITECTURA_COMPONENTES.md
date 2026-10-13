@@ -54,17 +54,22 @@ La diferencia práctica es que la invocación remota puede fallar por red o por 
 
 ## 7. Diagramas
 
-- Clases: [DIAGRAMA_DE_CLASES.md](DIAGRAMA_DE_CLASES.md)
-- Componentes: [ARQUITECTURA.md, vista de componentes](ARQUITECTURA.md#vista-de-componentes)
-- Despliegue: [ARQUITECTURA.md, despliegue](ARQUITECTURA.md#despliegue)
-- Secuencia del flujo principal: [ARQUITECTURA.md, flujo principal](ARQUITECTURA.md#flujo-principal)
+Todos están en [`diagramas/`](diagramas/README.md), en HTML y PNG.
+
+| Entregable | Diagrama |
+|---|---|
+| Diagrama de clases | [mechanic-service](diagramas/png/07-clases-mechanic.png), [assistance-service · dominio](diagramas/png/08-clases-assistance-dominio.png), [assistance-service · aplicación](diagramas/png/09-clases-assistance-aplicacion.png), [dispatch-service](diagramas/png/10-clases-dispatch.png) |
+| Diagrama de componentes | [Componentes](diagramas/png/01-componentes.png) |
+| Diagrama de despliegue | [Despliegue](diagramas/png/02-despliegue.png) |
+| Arquitectura en capas | [General](diagramas/png/03-capas.png) y por servicio: [mechanic](diagramas/png/04-capas-mechanic.png), [assistance](diagramas/png/05-capas-assistance.png), [dispatch](diagramas/png/06-capas-dispatch.png) |
+| Acceso local y remoto | [Local vs. remoto](diagramas/png/16-local-remoto.png) |
 
 ## 8. Evidencias de ejecución
 
-Las capturas se toman siguiendo [GUIA_DE_EVIDENCIAS.md](GUIA_DE_EVIDENCIAS.md):
+Las evidencias están en [`evidencias/`](evidencias/README.md) y se regeneran con `./scripts/evidencias.sh`.
 
-- **Local**: resultado de `mvn test` y logs de una fachada llamando a Factory y Repository dentro del proceso.
-- **Remota**: `docker compose ps` con los servicios saludables, el alta de una asistencia y los logs de las dos llamadas REST (asistencias → despacho → mecánicos), con la asistencia final en `MATCHED`.
+- **Local**: build y tests con Maven (`01`), logs de la fachada, el repositorio con sus sentencias SQL y los eventos de dominio dentro del mismo proceso (`06`), y una base de datos por servicio (`04`).
+- **Remota**: contenedores saludables (`02`), contratos OpenAPI y Swagger (`03`), flujo completo entre los tres servicios (`05`), el mismo correlation id en los logs de los tres servicios (`07`), y fallas remotas con timeout y reintento (`10`).
 
 ## 9. Decisiones y límites
 

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Arquitectura en capas</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:   #f5f5f5;
+      --color-ink:     #2d3142;
+      --color-muted:   #4f5d75;
+      --color-accent:  #eb6c36;
+      --font-sans:     'Geist', system-ui, sans-serif;
+      --font-serif:    'Instrument Serif', serif;
+      --font-mono:     'Geist Mono', ui-monospace, monospace;
+    }
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-paper);
+      color: var(--color-ink);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 2rem;
+    }
+    .frame { max-width: 1200px; width: 100%; }
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-muted);
+      margin-bottom: 0.5rem;
+    }
+    h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem);
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      color: var(--color-ink);
+      margin-bottom: 0.5rem;
+    }
+    .subtitle { color: var(--color-muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
+    h1 + svg { margin-top: 1rem; }
+    svg { width: 100%; min-width: 900px; display: block; }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Arquitectura en capas · MecanicosYa · Desarrollo de Aplicaciones II</p>
+    <h1>Arquitectura en capas</h1>
+    <p class="subtitle">Misma estructura de paquetes en mechanic-service, assistance-service y dispatch-service.</p>
+<svg viewBox="0 32 1040 416" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="capas-title capas-desc">
+<title id="capas-title">Arquitectura en capas</title>
+<desc id="capas-desc">Las cuatro capas que comparten los tres microservicios: presentación, servicios, dominio e infraestructura, con la capa de servicios destacada y la librería transversal al costado.</desc>
+<defs>
+<marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+<marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+<marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+<marker id="arrow-open" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polyline points="0 0, 8 3, 0 6" fill="none" stroke="#4f5d75" stroke-width="1.2"/></marker>
+</defs>
+<rect x="0" y="32" width="1040" height="416" fill="#f5f5f5"/>
+<text x="40" y="60" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.18em">REQUEST</text><line x1="80" y1="72" x2="80" y2="352" stroke="rgba(45,49,66,0.30)" stroke-width="1"/><polygon points="76,352 84,352 80,360" fill="#4f5d75"/><text x="40" y="380" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.18em">DATOS</text><rect x="120" y="72" width="680" height="72" fill="#ffffff"/><line x1="120" y1="144" x2="800" y2="144" stroke="rgba(45,49,66,0.12)" stroke-width="1"/><text x="140" y="112" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">API</text><text x="256" y="114" fill="#2d3142" font-size="16" font-weight="600" font-family="'Geist', sans-serif">Presentación</text><text x="780" y="114" fill="#4f5d75" font-size="10" font-family="'Geist Mono', monospace" text-anchor="end" letter-spacing="0.04em">controllers REST · DTOs validados · ProblemDetail</text><rect x="120" y="144" width="680" height="72" fill="rgba(235,108,54,0.08)"/><rect x="120" y="144" width="680" height="72" fill="none" stroke="#eb6c36" stroke-width="1"/><text x="140" y="184" fill="#eb6c36" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em" font-weight="600">APPLICATION</text><text x="256" y="186" fill="#2d3142" font-size="16" font-weight="600" font-family="'Geist', sans-serif">Servicios</text><text x="780" y="186" fill="#eb6c36" font-size="10" font-family="'Geist Mono', monospace" text-anchor="end" letter-spacing="0.04em">fachadas · eventos de dominio · puertos</text><rect x="120" y="216" width="680" height="72" fill="#ffffff"/><line x1="120" y1="288" x2="800" y2="288" stroke="rgba(45,49,66,0.12)" stroke-width="1"/><text x="140" y="256" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">DOMAIN</text><text x="256" y="258" fill="#2d3142" font-size="16" font-weight="600" font-family="'Geist', sans-serif">Dominio</text><text x="780" y="258" fill="#4f5d75" font-size="10" font-family="'Geist Mono', monospace" text-anchor="end" letter-spacing="0.04em">entidades y reglas · factories · strategies · repositorios</text><rect x="120" y="288" width="680" height="72" fill="#ececec"/><text x="140" y="328" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">INFRASTRUCTURE</text><text x="256" y="330" fill="#2d3142" font-size="16" font-weight="600" font-family="'Geist', sans-serif">Infraestructura</text><text x="780" y="330" fill="#4f5d75" font-size="10" font-family="'Geist Mono', monospace" text-anchor="end" letter-spacing="0.04em">Spring Data JPA · PostgreSQL · clientes REST</text><line x1="120" y1="72" x2="800" y2="72" stroke="rgba(45,49,66,0.12)" stroke-width="1"/><line x1="120" y1="360" x2="800" y2="360" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+<rect x="832" y="72" width="176" height="288" rx="6" fill="#f5f5f5"/><rect x="832" y="72" width="176" height="288" rx="6" fill="rgba(45,49,66,0.03)" stroke="rgba(45,49,66,0.30)" stroke-width="1"/><rect x="840" y="80" width="64" height="12" rx="2" fill="transparent" stroke="#4f5d75" stroke-opacity="0.45" stroke-width="0.8"/><text x="872" y="89" fill="#4f5d75" fill-opacity="0.85" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">TRANSVERSAL</text><text x="920" y="200" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">shared-observability</text><text x="920" y="216" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">correlation id</text><text x="920" y="230" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">logging con MDC</text><text x="920" y="244" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">config. externalizada</text><text x="920" y="258" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">actuator /health</text>
+<text x="120" y="404" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="start" letter-spacing="0.18em">CAPA FOCAL</text>
+<text x="212" y="404" fill="#4f5d75" font-size="12" font-family="'Instrument Serif', serif" text-anchor="start" font-style="italic">La capa de servicios expone los casos de uso; infraestructura implementa los puertos y repositorios que definen las capas de servicios y dominio.</text>
+</svg>
+  </div>
+</body>
+</html>

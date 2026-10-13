@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>assistance-service por capa</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:   #f5f5f5;
+      --color-ink:     #2d3142;
+      --color-muted:   #4f5d75;
+      --color-accent:  #eb6c36;
+      --font-sans:     'Geist', system-ui, sans-serif;
+      --font-serif:    'Instrument Serif', serif;
+      --font-mono:     'Geist Mono', ui-monospace, monospace;
+    }
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-paper);
+      color: var(--color-ink);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 2rem;
+    }
+    .frame { max-width: 1200px; width: 100%; }
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-muted);
+      margin-bottom: 0.5rem;
+    }
+    h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem);
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      color: var(--color-ink);
+      margin-bottom: 0.5rem;
+    }
+    .subtitle { color: var(--color-muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
+    h1 + svg { margin-top: 1rem; }
+    svg { width: 100%; min-width: 900px; display: block; }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Capas · assistance-service · MecanicosYa · Desarrollo de Aplicaciones II</p>
+    <h1>assistance-service por capa</h1>
+    <p class="subtitle">Clientes, vehículos y solicitudes de asistencia, con eventos de dominio y despacho remoto.</p>
+<svg viewBox="0 24 1080 616" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="capas-assistance-title capas-assistance-desc">
+<title id="capas-assistance-title">assistance-service por capa</title>
+<desc id="capas-assistance-desc">Clases de assistance-service por capa: controllers, fachadas y listeners de eventos, factory, entidades y repositorios, y el cliente REST que implementa el puerto hacia dispatch-service.</desc>
+<defs>
+<marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+<marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+<marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+<marker id="arrow-open" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polyline points="0 0, 8 3, 0 6" fill="none" stroke="#4f5d75" stroke-width="1.2"/></marker>
+</defs>
+<rect x="0" y="24" width="1080" height="616" fill="#f5f5f5"/>
+<rect x="24" y="48" width="1032" height="104" fill="rgba(45,49,66,0.025)"/><line x1="24" y1="48" x2="1056" y2="48" stroke="rgba(45,49,66,0.12)" stroke-width="1"/><text x="40" y="98" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">API</text><text x="40" y="114" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif">Presentación</text><rect x="24" y="152" width="1032" height="184" fill="rgba(45,49,66,0.0)"/><line x1="24" y1="152" x2="1056" y2="152" stroke="rgba(45,49,66,0.12)" stroke-width="1"/><text x="40" y="242" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">APPLICATION</text><text x="40" y="258" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif">Servicios</text><rect x="24" y="336" width="1032" height="104" fill="rgba(45,49,66,0.025)"/><line x1="24" y1="336" x2="1056" y2="336" stroke="rgba(45,49,66,0.12)" stroke-width="1"/><text x="40" y="386" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">DOMAIN</text><text x="40" y="402" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif">Dominio</text><rect x="24" y="440" width="1032" height="96" fill="rgba(45,49,66,0.0)"/><line x1="24" y1="440" x2="1056" y2="440" stroke="rgba(45,49,66,0.12)" stroke-width="1"/><text x="40" y="486" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">INFRA</text><text x="40" y="502" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif">Infraestructura</text><line x1="24" y1="536" x2="1056" y2="536" stroke="rgba(45,49,66,0.12)" stroke-width="1"/><line x1="152" y1="48" x2="152" y2="536" stroke="rgba(45,49,66,0.08)" stroke-width="1"/>
+<path d="M 560,128 V 176" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+<path d="M 672,92 H 824 Q 832.0,92 832,100 V 176" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+<path d="M 672,196 H 720" fill="none" stroke="#4f5d75" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#arrow-open)"/>
+<path d="M 720,220 H 672" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+<path d="M 448,204 H 400" fill="none" stroke="#4f5d75" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#arrow-open)"/>
+<path d="M 832.0,232 V 272" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+<path d="M 480,232 V 328 Q 480,336 472,336 H 296 Q 288.0,336 288,344 V 360" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+<path d="M 640,232 V 360" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+<path d="M 672,392 H 720" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+<path d="M 944,488 H 992 Q 1000,488 1000,480 V 304 Q 1000,296 992,296 H 944" fill="none" stroke="#4f5d75" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#arrow)"/>
+<rect x="746" y="74" width="60" height="12" rx="2" fill="#f5f5f5"/><text x="776" y="83" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">REINTENTO</text>
+<rect x="674" y="178" width="44" height="12" rx="2" fill="#f5f5f5"/><text x="696" y="187" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">EVENTO</text>
+<rect x="674" y="226" width="44" height="12" rx="2" fill="#f5f5f5"/><text x="696" y="235" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">ASIGNA</text>
+<rect x="402" y="186" width="44" height="12" rx="2" fill="#f5f5f5"/><text x="424" y="195" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">EVENTO</text>
+<rect x="486" y="290" width="36" height="12" rx="2" fill="#f5f5f5"/><text x="504" y="299" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">CREA</text>
+<rect x="606" y="290" width="28" height="12" rx="2" fill="#f5f5f5"/><text x="620" y="299" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">USA</text>
+<rect x="674" y="374" width="44" height="12" rx="2" fill="#f5f5f5"/><text x="696" y="383" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">GUARDA</text>
+<rect x="926" y="446" width="68" height="12" rx="2" fill="#f5f5f5"/><text x="960" y="455" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">IMPLEMENTA</text>
+<rect x="448" y="72" width="224" height="56" rx="6" fill="#f5f5f5"/><rect x="448" y="72" width="224" height="56" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/><text x="560" y="90" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Controllers REST</text><text x="560" y="106" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">AssistanceController</text><text x="560" y="120" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">ClientController</text>
+<rect x="176" y="176" width="224" height="56" rx="6" fill="#f5f5f5"/><rect x="176" y="176" width="224" height="56" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/><text x="288" y="201" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">StatusHistoryRecorder</text><text x="288" y="217" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">@EventListener</text>
+<rect x="448" y="176" width="224" height="56" rx="6" fill="#f5f5f5"/><rect x="448" y="176" width="224" height="56" rx="6" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1"/><text x="560" y="194" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Fachadas</text><text x="560" y="210" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">AssistanceFacade</text><text x="560" y="224" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">ClientFacade</text>
+<rect x="720" y="176" width="224" height="56" rx="6" fill="#f5f5f5"/><rect x="720" y="176" width="224" height="56" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/><text x="832" y="201" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">DispatchCoordinator</text><text x="832" y="217" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">@TransactionalEventListener</text>
+<rect x="720" y="272" width="224" height="48" rx="6" fill="#f5f5f5"/><rect x="720" y="272" width="224" height="48" rx="6" fill="#ffffff" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3"/><text x="832" y="293" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">DispatchPort</text><text x="832" y="309" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">puerto hacia despacho</text>
+<rect x="176" y="360" width="224" height="64" rx="6" fill="#f5f5f5"/><rect x="176" y="360" width="224" height="64" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/><text x="288" y="389" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">AssistanceFactory</text><text x="288" y="405" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">crea AssistanceRequest</text>
+<rect x="448" y="360" width="224" height="64" rx="6" fill="#f5f5f5"/><rect x="448" y="360" width="224" height="64" rx="6" fill="#ffffff" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3"/><text x="560" y="382" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Repositorios</text><text x="560" y="398" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">Spring Data JPA</text><text x="560" y="412" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">→ assistances_db</text>
+<rect x="720" y="360" width="224" height="64" rx="6" fill="#f5f5f5"/><rect x="720" y="360" width="224" height="64" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/><text x="832" y="382" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Entidades</text><text x="832" y="398" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">AssistanceRequest · Client</text><text x="832" y="412" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">Vehicle · StatusChange</text>
+<rect x="720" y="464" width="224" height="48" rx="6" fill="#f5f5f5"/><rect x="720" y="464" width="224" height="48" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/><text x="832" y="485" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">DispatchRestClient</text><text x="832" y="501" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">→ dispatch-service :8083</text>
+<line x1="40" y1="568" x2="1040" y2="568" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/><text x="40" y="588" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">LEYENDA</text><rect x="120" y="578" width="20" height="12" rx="3" fill="#f5f5f5"/><rect x="120" y="578" width="20" height="12" rx="3" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1"/><text x="152" y="588" fill="#4f5d75" font-size="9" font-family="'Geist', sans-serif">Capa de servicios</text><rect x="269" y="578" width="20" height="12" rx="3" fill="#f5f5f5"/><rect x="269" y="578" width="20" height="12" rx="3" fill="#ffffff" stroke="#2d3142" stroke-width="1"/><text x="301" y="588" fill="#4f5d75" font-size="9" font-family="'Geist', sans-serif">Clase</text><rect x="358" y="578" width="20" height="12" rx="3" fill="#f5f5f5"/><rect x="358" y="578" width="20" height="12" rx="3" fill="#ffffff" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3"/><text x="390" y="588" fill="#4f5d75" font-size="9" font-family="'Geist', sans-serif">Interfaz / puerto</text><line x1="507" y1="584" x2="531" y2="584" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/><text x="539" y="588" fill="#4f5d75" font-size="9" font-family="'Geist', sans-serif">Invocación</text><line x1="621" y1="584" x2="645" y2="584" stroke="#4f5d75" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#arrow)"/><text x="653" y="588" fill="#4f5d75" font-size="9" font-family="'Geist', sans-serif">Evento / implementa</text>
+</svg>
+  </div>
+</body>
+</html>
