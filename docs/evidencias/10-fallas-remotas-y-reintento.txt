@@ -1,32 +1,32 @@
 # E10 · Fallas remotas, timeouts y reintento
-# 2026-10-12 21:14:10 -0300 · commit dbf6c9b
+# 2026-10-12 21:28:18 -0300 · commit 4c196b1
 
 ## dispatch-service sin responder (contenedor pausado): el alta se confirma y la asistencia queda REQUESTED
 $ docker compose pause dispatch-service
  Container mecanicosya_backend-dispatch-service-1 Paused 
-$ curl -X POST http://localhost:8082/api/assistances -H 'X-Correlation-Id: ev-falla-dispatch-1791850376' -H 'Content-Type: application/json' -d '{"clientId":"0c9bb435-ef52-4e40-a6c9-bc8d966b96aa","vehicleId":"772d29bb-9929-4ebe-b09a-e132e7628931","description":"Pinchadura en el centro","problemType":"TIRE","requiredSkill":"FALLAS_1791850376","latitude":-34.6037,"longitude":-58.3816}'
+$ curl -X POST http://localhost:8082/api/assistances -H 'X-Correlation-Id: ev-falla-dispatch-1791851203' -H 'Content-Type: application/json' -d '{"clientId":"57d99e05-5824-4900-a918-fa516731edeb","vehicleId":"1e7526f3-2966-4e9a-931c-773af3aee89b","description":"Pinchadura en el centro","problemType":"TIRE","requiredSkill":"FALLAS_1791851203","latitude":-34.6037,"longitude":-58.3816}'
 HTTP 201 · 5.01s
 {
-  "id": "5ea244e2-19a0-472b-8daf-0f86fbac5508",
-  "clientId": "0c9bb435-ef52-4e40-a6c9-bc8d966b96aa",
-  "vehicleId": "772d29bb-9929-4ebe-b09a-e132e7628931",
+  "id": "e50bb053-7f22-4529-8334-3dd68954df19",
+  "clientId": "57d99e05-5824-4900-a918-fa516731edeb",
+  "vehicleId": "1e7526f3-2966-4e9a-931c-773af3aee89b",
   "vehicleType": "BICYCLE",
   "description": "Pinchadura en el centro",
   "problemType": "TIRE",
-  "requiredSkill": "FALLAS_1791850376",
+  "requiredSkill": "FALLAS_1791851203",
   "latitude": -34.6037,
   "longitude": -58.3816,
   "status": "REQUESTED",
   "assignedMechanicId": null,
-  "createdAt": "2026-10-13T00:14:10.840075803Z"
+  "createdAt": "2026-10-13T00:28:18.943733709Z"
 }
 
 ## reintento manual: vence el timeout de 5 s (DISPATCH_SERVICE_TIMEOUT) → 503
-$ curl -X POST http://localhost:8082/api/assistances/5ea244e2-19a0-472b-8daf-0f86fbac5508/dispatch -H 'X-Correlation-Id: ev-falla-dispatch-1791850376'
-HTTP 503 · 5.00s
+$ curl -X POST http://localhost:8082/api/assistances/e50bb053-7f22-4529-8334-3dd68954df19/dispatch -H 'X-Correlation-Id: ev-falla-dispatch-1791851203'
+HTTP 503 · 5.02s
 {
   "detail": "dispatch-service is not available; the assistance stays REQUESTED and the dispatch can be retried",
-  "instance": "/api/assistances/5ea244e2-19a0-472b-8daf-0f86fbac5508/dispatch",
+  "instance": "/api/assistances/e50bb053-7f22-4529-8334-3dd68954df19/dispatch",
   "status": 503,
   "title": "Dispatch service unavailable"
 }
@@ -35,63 +35,63 @@ $ docker compose unpause dispatch-service
  Container mecanicosya_backend-dispatch-service-1 Unpaused 
 
 ## reintento manual con dispatch-service disponible → MATCHED
-$ curl -X POST http://localhost:8082/api/assistances/5ea244e2-19a0-472b-8daf-0f86fbac5508/dispatch -H 'X-Correlation-Id: ev-falla-dispatch-1791850376'
-HTTP 200 · 0.14s
+$ curl -X POST http://localhost:8082/api/assistances/e50bb053-7f22-4529-8334-3dd68954df19/dispatch -H 'X-Correlation-Id: ev-falla-dispatch-1791851203'
+HTTP 200 · 0.04s
 {
-  "id": "5ea244e2-19a0-472b-8daf-0f86fbac5508",
-  "clientId": "0c9bb435-ef52-4e40-a6c9-bc8d966b96aa",
-  "vehicleId": "772d29bb-9929-4ebe-b09a-e132e7628931",
+  "id": "e50bb053-7f22-4529-8334-3dd68954df19",
+  "clientId": "57d99e05-5824-4900-a918-fa516731edeb",
+  "vehicleId": "1e7526f3-2966-4e9a-931c-773af3aee89b",
   "vehicleType": "BICYCLE",
   "description": "Pinchadura en el centro",
   "problemType": "TIRE",
-  "requiredSkill": "FALLAS_1791850376",
+  "requiredSkill": "FALLAS_1791851203",
   "latitude": -34.6037,
   "longitude": -58.3816,
   "status": "MATCHED",
-  "assignedMechanicId": "faa92eaf-ff2b-490d-a206-fa4dd4d0816c",
-  "createdAt": "2026-10-13T00:14:10.840076Z"
+  "assignedMechanicId": "347cd60b-d172-489b-b926-bd6d0203e374",
+  "createdAt": "2026-10-13T00:28:18.943734Z"
 }
 
-$ curl -X GET http://localhost:8082/api/assistances/5ea244e2-19a0-472b-8daf-0f86fbac5508/history -H 'X-Correlation-Id: ev-falla-dispatch-1791850376'
+$ curl -X GET http://localhost:8082/api/assistances/e50bb053-7f22-4529-8334-3dd68954df19/history -H 'X-Correlation-Id: ev-falla-dispatch-1791851203'
 HTTP 200 · 0.00s
 [
   {
     "fromStatus": null,
     "toStatus": "REQUESTED",
-    "changedAt": "2026-10-13T00:14:10.840756Z"
+    "changedAt": "2026-10-13T00:28:18.944347Z"
   },
   {
     "fromStatus": "REQUESTED",
     "toStatus": "MATCHED",
-    "changedAt": "2026-10-13T00:14:21.221615Z"
+    "changedAt": "2026-10-13T00:28:34.247166Z"
   }
 ]
 
 ## mechanic-service sin responder (pausado): vence el timeout de 3 s, dispatch-service responde 503 y assistance-service lo informa como 502
 $ docker compose pause mechanic-service
  Container mecanicosya_backend-mechanic-service-1 Paused 
-$ curl -X POST http://localhost:8082/api/assistances -H 'X-Correlation-Id: ev-falla-mechanic-1791850376' -H 'Content-Type: application/json' -d '{"clientId":"0c9bb435-ef52-4e40-a6c9-bc8d966b96aa","vehicleId":"772d29bb-9929-4ebe-b09a-e132e7628931","description":"Pinchadura en el centro","problemType":"TIRE","requiredSkill":"FALLAS_1791850376","latitude":-34.6037,"longitude":-58.3816}'
+$ curl -X POST http://localhost:8082/api/assistances -H 'X-Correlation-Id: ev-falla-mechanic-1791851203' -H 'Content-Type: application/json' -d '{"clientId":"57d99e05-5824-4900-a918-fa516731edeb","vehicleId":"1e7526f3-2966-4e9a-931c-773af3aee89b","description":"Pinchadura en el centro","problemType":"TIRE","requiredSkill":"FALLAS_1791851203","latitude":-34.6037,"longitude":-58.3816}'
 HTTP 201 · 3.04s
 {
-  "id": "ff8eca77-088e-432c-896b-fc7fdb224dbd",
-  "clientId": "0c9bb435-ef52-4e40-a6c9-bc8d966b96aa",
-  "vehicleId": "772d29bb-9929-4ebe-b09a-e132e7628931",
+  "id": "3c070eca-63c4-49e6-9f99-e9ff55ea59c6",
+  "clientId": "57d99e05-5824-4900-a918-fa516731edeb",
+  "vehicleId": "1e7526f3-2966-4e9a-931c-773af3aee89b",
   "vehicleType": "BICYCLE",
   "description": "Pinchadura en el centro",
   "problemType": "TIRE",
-  "requiredSkill": "FALLAS_1791850376",
+  "requiredSkill": "FALLAS_1791851203",
   "latitude": -34.6037,
   "longitude": -58.3816,
   "status": "REQUESTED",
   "assignedMechanicId": null,
-  "createdAt": "2026-10-13T00:14:21.382346085Z"
+  "createdAt": "2026-10-13T00:28:34.413568591Z"
 }
 
-$ curl -X POST http://localhost:8082/api/assistances/ff8eca77-088e-432c-896b-fc7fdb224dbd/dispatch -H 'X-Correlation-Id: ev-falla-mechanic-1791850376'
-HTTP 502 · 3.04s
+$ curl -X POST http://localhost:8082/api/assistances/3c070eca-63c4-49e6-9f99-e9ff55ea59c6/dispatch -H 'X-Correlation-Id: ev-falla-mechanic-1791851203'
+HTTP 502 · 3.01s
 {
   "detail": "dispatch-service answered 503",
-  "instance": "/api/assistances/ff8eca77-088e-432c-896b-fc7fdb224dbd/dispatch",
+  "instance": "/api/assistances/3c070eca-63c4-49e6-9f99-e9ff55ea59c6/dispatch",
   "status": 502,
   "title": "Dispatch service error"
 }
@@ -100,28 +100,28 @@ $ docker compose unpause mechanic-service
  Container mecanicosya_backend-mechanic-service-1 Unpaused 
 
 ## reintento con mechanic-service disponible → MATCHED
-$ curl -X POST http://localhost:8082/api/assistances/ff8eca77-088e-432c-896b-fc7fdb224dbd/dispatch -H 'X-Correlation-Id: ev-falla-mechanic-1791850376'
-HTTP 200 · 0.03s
+$ curl -X POST http://localhost:8082/api/assistances/3c070eca-63c4-49e6-9f99-e9ff55ea59c6/dispatch -H 'X-Correlation-Id: ev-falla-mechanic-1791851203'
+HTTP 200 · 0.05s
 {
-  "id": "ff8eca77-088e-432c-896b-fc7fdb224dbd",
-  "clientId": "0c9bb435-ef52-4e40-a6c9-bc8d966b96aa",
-  "vehicleId": "772d29bb-9929-4ebe-b09a-e132e7628931",
+  "id": "3c070eca-63c4-49e6-9f99-e9ff55ea59c6",
+  "clientId": "57d99e05-5824-4900-a918-fa516731edeb",
+  "vehicleId": "1e7526f3-2966-4e9a-931c-773af3aee89b",
   "vehicleType": "BICYCLE",
   "description": "Pinchadura en el centro",
   "problemType": "TIRE",
-  "requiredSkill": "FALLAS_1791850376",
+  "requiredSkill": "FALLAS_1791851203",
   "latitude": -34.6037,
   "longitude": -58.3816,
   "status": "MATCHED",
-  "assignedMechanicId": "faa92eaf-ff2b-490d-a206-fa4dd4d0816c",
-  "createdAt": "2026-10-13T00:14:21.382346Z"
+  "assignedMechanicId": "347cd60b-d172-489b-b926-bd6d0203e374",
+  "createdAt": "2026-10-13T00:28:34.413569Z"
 }
 
 ## logs de las fallas
 $ docker compose logs assistance-service dispatch-service | grep -E 'ev-falla-' | grep -E 'WARN|ERROR' | grep 'c.u.m.'
-assistance-service-1  | 2026-10-13T00:14:15.850Z ERROR [assistance-service,ev-falla-dispatch-1791850376] 1 --- [assistance-service] [mcat-handler-66] c.u.m.a.a.AssistanceDispatchCoordinator  : Remote dispatch failed for assistance 5ea244e2-19a0-472b-8daf-0f86fbac5508. It can be retried through the REST endpoint.
-assistance-service-1  | 2026-10-13T00:14:20.911Z  WARN [assistance-service,ev-falla-dispatch-1791850376] 1 --- [assistance-service] [mcat-handler-68] c.u.m.a.api.AssistanceExceptionHandler   : dispatch-service is not reachable
-dispatch-service-1    | 2026-10-13T00:14:24.405Z  WARN [dispatch-service,ev-falla-mechanic-1791850376] 1 --- [dispatch-service] [omcat-handler-8] c.u.m.d.api.DispatchExceptionHandler     : Dispatch could not reach mechanic-service
-assistance-service-1  | 2026-10-13T00:14:24.423Z ERROR [assistance-service,ev-falla-mechanic-1791850376] 1 --- [assistance-service] [mcat-handler-74] c.u.m.a.a.AssistanceDispatchCoordinator  : Remote dispatch failed for assistance ff8eca77-088e-432c-896b-fc7fdb224dbd. It can be retried through the REST endpoint.
-dispatch-service-1    | 2026-10-13T00:14:27.508Z  WARN [dispatch-service,ev-falla-mechanic-1791850376] 1 --- [dispatch-service] [omcat-handler-9] c.u.m.d.api.DispatchExceptionHandler     : Dispatch could not reach mechanic-service
-assistance-service-1  | 2026-10-13T00:14:27.517Z  WARN [assistance-service,ev-falla-mechanic-1791850376] 1 --- [assistance-service] [mcat-handler-76] c.u.m.a.api.AssistanceExceptionHandler   : dispatch-service answered with an error
+assistance-service-1  | 2026-10-13T00:28:23.951Z ERROR [assistance-service,ev-falla-dispatch-1791851203] 1 --- [assistance-service] [mcat-handler-94] c.u.m.a.a.AssistanceDispatchCoordinator  : Remote dispatch failed for assistance e50bb053-7f22-4529-8334-3dd68954df19. It can be retried through the REST endpoint.
+assistance-service-1  | 2026-10-13T00:28:29.022Z  WARN [assistance-service,ev-falla-dispatch-1791851203] 1 --- [assistance-service] [mcat-handler-96] c.u.m.a.api.AssistanceExceptionHandler   : dispatch-service is not reachable
+dispatch-service-1    | 2026-10-13T00:28:37.431Z  WARN [dispatch-service,ev-falla-mechanic-1791851203] 1 --- [dispatch-service] [omcat-handler-8] c.u.m.d.api.DispatchExceptionHandler     : Dispatch could not reach mechanic-service
+assistance-service-1  | 2026-10-13T00:28:37.452Z ERROR [assistance-service,ev-falla-mechanic-1791851203] 1 --- [assistance-service] [cat-handler-102] c.u.m.a.a.AssistanceDispatchCoordinator  : Remote dispatch failed for assistance 3c070eca-63c4-49e6-9f99-e9ff55ea59c6. It can be retried through the REST endpoint.
+dispatch-service-1    | 2026-10-13T00:28:40.518Z  WARN [dispatch-service,ev-falla-mechanic-1791851203] 1 --- [dispatch-service] [omcat-handler-9] c.u.m.d.api.DispatchExceptionHandler     : Dispatch could not reach mechanic-service
+assistance-service-1  | 2026-10-13T00:28:40.520Z  WARN [assistance-service,ev-falla-mechanic-1791851203] 1 --- [assistance-service] [cat-handler-104] c.u.m.a.api.AssistanceExceptionHandler   : dispatch-service answered with an error

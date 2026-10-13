@@ -1,10 +1,10 @@
 # E07 · Acceso remoto: la misma petición atraviesa los tres servicios
-# 2026-10-12 21:13:41 -0300 · commit dbf6c9b
+# 2026-10-12 21:27:50 -0300 · commit 4c196b1
 
 El correlation id viaja en el header X-Correlation-Id de cada llamada REST.
 $ docker compose logs assistance-service dispatch-service mechanic-service | grep demo-mecanicosya | grep -v 'org.hibernate.SQL'
-assistance-service-1  | 2026-10-13T00:13:41.353Z  INFO [assistance-service,demo-mecanicosya] 1 --- [assistance-service] [mcat-handler-24] c.u.m.a.a.AssistanceDispatchCoordinator  : Received assistance.requested.v2 for assistance d63bac61-1c4f-4989-809d-dc0c4daf8980, calling dispatch-service
-dispatch-service-1  | 2026-10-13T00:13:41.469Z  INFO [dispatch-service,demo-mecanicosya] 1 --- [dispatch-service] [mcat-handler-22] c.u.m.d.application.DispatchFacade       : Dispatching assistance d63bac61-1c4f-4989-809d-dc0c4daf8980: asking mechanic-service for CHAIN_REPAIR candidates
-mechanic-service-1    | 2026-10-13T00:13:41.521Z  INFO [mechanic-service,demo-mecanicosya] 1 --- [mechanic-service] [mcat-handler-30] c.u.m.m.application.MechanicFacade       : Found 4 available mechanics for skill CHAIN_REPAIR and vehicle BICYCLE
-dispatch-service-1  | 2026-10-13T00:13:41.540Z  INFO [dispatch-service,demo-mecanicosya] 1 --- [dispatch-service] [mcat-handler-22] c.u.m.d.application.DispatchFacade       : Assistance d63bac61-1c4f-4989-809d-dc0c4daf8980 matched with mechanic 9a8688fe-770d-4fe6-9021-3cf8380b5227 at 0.04 km out of 4 candidates
-assistance-service-1  | 2026-10-13T00:13:41.598Z  INFO [assistance-service,demo-mecanicosya] 1 --- [assistance-service] [mcat-handler-24] c.u.m.a.a.AssistanceDispatchCoordinator  : Assistance d63bac61-1c4f-4989-809d-dc0c4daf8980 matched with mechanic 9a8688fe-770d-4fe6-9021-3cf8380b5227 at 0.04 km
+assistance-service-1  | 2026-10-13T00:27:49.771Z  INFO [assistance-service,demo-mecanicosya] 1 --- [assistance-service] [mcat-handler-52] c.u.m.a.a.AssistanceDispatchCoordinator  : Received assistance.requested.v2 for assistance 2dbbf8d6-130e-4f20-ab49-165f89ac394c, calling dispatch-service
+dispatch-service-1    | 2026-10-13T00:27:49.777Z  INFO [dispatch-service,demo-mecanicosya] 1 --- [dispatch-service] [mcat-handler-36] c.u.m.d.application.DispatchFacade       : Dispatching assistance 2dbbf8d6-130e-4f20-ab49-165f89ac394c: asking mechanic-service for CHAIN_REPAIR candidates
+mechanic-service-1  | 2026-10-13T00:27:49.785Z  INFO [mechanic-service,demo-mecanicosya] 1 --- [mechanic-service] [mcat-handler-44] c.u.m.m.application.MechanicFacade       : Found 2 available mechanics for skill CHAIN_REPAIR and vehicle BICYCLE
+dispatch-service-1    | 2026-10-13T00:27:49.789Z  INFO [dispatch-service,demo-mecanicosya] 1 --- [dispatch-service] [mcat-handler-36] c.u.m.d.application.DispatchFacade       : Assistance 2dbbf8d6-130e-4f20-ab49-165f89ac394c matched with mechanic 09215894-ff87-4dd1-97b4-51bfc8b9748a at 0.04 km out of 2 candidates
+assistance-service-1  | 2026-10-13T00:27:49.798Z  INFO [assistance-service,demo-mecanicosya] 1 --- [assistance-service] [mcat-handler-52] c.u.m.a.a.AssistanceDispatchCoordinator  : Assistance 2dbbf8d6-130e-4f20-ab49-165f89ac394c matched with mechanic 09215894-ff87-4dd1-97b4-51bfc8b9748a at 0.04 km

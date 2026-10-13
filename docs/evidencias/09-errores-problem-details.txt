@@ -1,9 +1,9 @@
 # E09 · Validación y manejo de errores con Problem Details
-# 2026-10-12 21:14:10 -0300 · commit dbf6c9b
+# 2026-10-12 21:28:18 -0300 · commit 4c196b1
 
 ## 400 · datos inválidos en el alta de mecánico
-$ curl -X POST http://localhost:8081/api/mechanics -H 'X-Correlation-Id: ev-errores-1791850376' -H 'Content-Type: application/json' -d '{"name":"","email":"no-es-un-email","latitude":120,"longitude":-58.38,"skills":[]}'
-HTTP 400 · 0.04s
+$ curl -X POST http://localhost:8081/api/mechanics -H 'X-Correlation-Id: ev-errores-1791851203' -H 'Content-Type: application/json' -d '{"name":"","email":"no-es-un-email","latitude":120,"longitude":-58.38,"skills":[]}'
+HTTP 400 · 0.03s
 {
   "detail": "The request has 4 invalid field(s)",
   "instance": "/api/mechanics",
@@ -18,17 +18,17 @@ HTTP 400 · 0.04s
 }
 
 ## 400 · regla de dominio: una moto requiere patente
-$ curl -X POST http://localhost:8082/api/clients/61598005-4d68-434b-afb7-381e6f762a61/vehicles -H 'X-Correlation-Id: ev-errores-1791850376' -H 'Content-Type: application/json' -d '{"type":"MOTORCYCLE","brand":"Honda","model":"Wave"}'
-HTTP 400 · 0.01s
+$ curl -X POST http://localhost:8082/api/clients/f5ec1db3-a09e-4df7-8f2e-ad37591e9543/vehicles -H 'X-Correlation-Id: ev-errores-1791851203' -H 'Content-Type: application/json' -d '{"type":"MOTORCYCLE","brand":"Honda","model":"Wave"}'
+HTTP 400 · 0.00s
 {
   "detail": "A MOTORCYCLE requires a plate",
-  "instance": "/api/clients/61598005-4d68-434b-afb7-381e6f762a61/vehicles",
+  "instance": "/api/clients/f5ec1db3-a09e-4df7-8f2e-ad37591e9543/vehicles",
   "status": 400,
   "title": "Invalid assistance data"
 }
 
 ## 404 · asistencia inexistente
-$ curl -X GET http://localhost:8082/api/assistances/00000000-0000-0000-0000-000000000000 -H 'X-Correlation-Id: ev-errores-1791850376'
+$ curl -X GET http://localhost:8082/api/assistances/00000000-0000-0000-0000-000000000000 -H 'X-Correlation-Id: ev-errores-1791851203'
 HTTP 404 · 0.00s
 {
   "detail": "Assistance not found: 00000000-0000-0000-0000-000000000000",
@@ -38,20 +38,20 @@ HTTP 404 · 0.00s
 }
 
 ## 409 · transición inválida (iniciar una asistencia que sigue REQUESTED)
-$ curl -X POST http://localhost:8082/api/assistances/6b52d017-1a95-4a96-98da-ce8662e3a887/start -H 'X-Correlation-Id: ev-errores-1791850376'
+$ curl -X POST http://localhost:8082/api/assistances/b25f6cff-44c7-460b-be64-a436737bbb22/start -H 'X-Correlation-Id: ev-errores-1791851203'
 HTTP 409 · 0.00s
 {
   "detail": "An assistance in status REQUESTED cannot start",
-  "instance": "/api/assistances/6b52d017-1a95-4a96-98da-ce8662e3a887/start",
+  "instance": "/api/assistances/b25f6cff-44c7-460b-be64-a436737bbb22/start",
   "status": 409,
   "title": "Conflict with the current state"
 }
 
 ## 409 · email de cliente repetido
-$ curl -X POST http://localhost:8082/api/clients -H 'X-Correlation-Id: ev-errores-1791850376' -H 'Content-Type: application/json' -d '{"fullName":"Otro","phone":"1100000000","email":"rep-errores-1791850376@example.com"}'
+$ curl -X POST http://localhost:8082/api/clients -H 'X-Correlation-Id: ev-errores-1791851203' -H 'Content-Type: application/json' -d '{"fullName":"Otro","phone":"1100000000","email":"rep-errores-1791851203@example.com"}'
 HTTP 409 · 0.00s
 {
-  "detail": "A client with email rep-errores-1791850376@example.com already exists",
+  "detail": "A client with email rep-errores-1791851203@example.com already exists",
   "instance": "/api/clients",
   "status": 409,
   "title": "Conflict with the current state"

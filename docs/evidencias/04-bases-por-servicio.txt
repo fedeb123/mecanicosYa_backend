@@ -1,5 +1,5 @@
 # E04 · Una base de datos por servicio (componente de acceso a datos)
-# 2026-10-12 21:13:42 -0300 · commit dbf6c9b
+# 2026-10-12 21:27:50 -0300 · commit 4c196b1
 
 $ docker compose exec postgres psql -U mecanicosya_admin -d mechanics_db -c '\dt'
                       List of relations
@@ -31,13 +31,13 @@ $ docker compose exec postgres psql -U mecanicosya_admin -d dispatch_db -c '\dt'
 (2 rows)
 
 $ docker compose exec postgres psql -U mecanicosya_admin -d assistances_db -c 'select from_status, to_status, changed_at from assistance_status_changes order by changed_at desc limit 6'
- from_status | to_status |          changed_at           
--------------+-----------+-------------------------------
- REQUESTED   | MATCHED   | 2026-10-13 00:13:41.58177+00
-             | REQUESTED | 2026-10-13 00:13:41.348183+00
- REQUESTED   | MATCHED   | 2026-10-13 00:12:33.974449+00
-             | REQUESTED | 2026-10-13 00:12:27.670611+00
- REQUESTED   | MATCHED   | 2026-10-13 00:12:27.539107+00
-             | REQUESTED | 2026-10-13 00:12:17.084461+00
+ from_status |  to_status  |          changed_at           
+-------------+-------------+-------------------------------
+ REQUESTED   | MATCHED     | 2026-10-13 00:27:49.794855+00
+             | REQUESTED   | 2026-10-13 00:27:49.768208+00
+ IN_PROGRESS | COMPLETED   | 2026-10-13 00:27:43.611143+00
+ MATCHED     | IN_PROGRESS | 2026-10-13 00:27:43.307369+00
+ REQUESTED   | MATCHED     | 2026-10-13 00:27:43.048911+00
+             | REQUESTED   | 2026-10-13 00:27:42.997549+00
 (6 rows)
 

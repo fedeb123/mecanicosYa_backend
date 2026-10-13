@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Genera las evidencias de ejecución local y remota en docs/evidencias/.
 # Uso (desde la raíz del repo, con Docker Desktop corriendo):  ./scripts/evidencias.sh
+# Arranca desde bases vacías: borra el volumen de PostgreSQL del laboratorio (docker compose down -v).
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -75,9 +76,15 @@ assistance_body() { # skill
   echo "{\"clientId\":\"$CLIENT\",\"vehicleId\":\"$VEHICLE\",\"description\":\"Pinchadura en el centro\",\"problemType\":\"TIRE\",\"requiredSkill\":\"$1\",\"latitude\":-34.6037,\"longitude\":-58.3816}"
 }
 
-echo "== Levantando el entorno"
+echo "== Levantando el entorno desde bases vacías"
+"${DC[@]}" down -v --remove-orphans
 "${DC[@]}" up -d --build --wait
 wait_healthy $M; wait_healthy $A; wait_healthy $D
+
+# ---------------------------------------------------------------- E11
+# Primero, con las bases vacías: la consola web en uso (demo, mecánicos, clientes, asistencias y un 409).
+rm -f "$EV"/capturas/11*.png
+node scripts/capturas-consola.mjs "$EV/capturas"
 
 # ---------------------------------------------------------------- E02
 {
@@ -204,6 +211,7 @@ NEAR=$(new_mechanic "Mecanica Cercana" -34.6040 -58.3820 "FALLAS_${RUN_ID}")
   echo "\$ docker compose unpause dispatch-service"
   "${DC[@]}" unpause dispatch-service 2>&1
   wait_healthy $D
+  sleep 5 # el reintento manual llega después de que el servicio terminó lo que tenía pendiente
   echo
   echo "## reintento manual con dispatch-service disponible → MATCHED"
   req POST "$A/api/assistances/$F1/dispatch"
@@ -218,6 +226,7 @@ NEAR=$(new_mechanic "Mecanica Cercana" -34.6040 -58.3820 "FALLAS_${RUN_ID}")
   echo "\$ docker compose unpause mechanic-service"
   "${DC[@]}" unpause mechanic-service 2>&1
   wait_healthy $M
+  sleep 5 # el reintento manual llega después de que el servicio terminó lo que tenía pendiente
   echo
   echo "## reintento con mechanic-service disponible → MATCHED"
   req POST "$A/api/assistances/$F2/dispatch"
@@ -227,8 +236,7 @@ NEAR=$(new_mechanic "Mecanica Cercana" -34.6040 -58.3820 "FALLAS_${RUN_ID}")
     | grep "c.u.m." | sort -t'|' -k2 || true
 } >"$EV/10-fallas-remotas-y-reintento.txt"
 
-# ---------------------------------------------------------------- E11
-shot "http://localhost:8080" "$EV/capturas/11-consola-web.png" 1440 1400
+# ---------------------------------------------------------------- E01 (captura)
 shot "https://github.com/fedeb123/mecanicosYa_backend/actions" "$EV/capturas/01-github-actions.png" 1440 1100
 
 echo "== Evidencias generadas en $EV (el entorno sigue levantado; para detenerlo: docker compose down)"

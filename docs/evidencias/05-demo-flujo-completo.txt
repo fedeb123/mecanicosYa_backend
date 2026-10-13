@@ -1,12 +1,12 @@
 # E05 · Flujo completo con scripts/demo.sh
-# 2026-10-12 21:13:40 -0300 · commit dbf6c9b
+# 2026-10-12 21:27:49 -0300 · commit 4c196b1
 
 $ ./scripts/demo.sh
 Asistencia:
 {
-  "id": "d63bac61-1c4f-4989-809d-dc0c4daf8980",
-  "clientId": "3a306c09-34b3-45da-a134-84d5c506416c",
-  "vehicleId": "045d9172-881a-4af8-b5a2-65164f7f0c48",
+  "id": "2dbbf8d6-130e-4f20-ab49-165f89ac394c",
+  "clientId": "7389a9ca-a7ca-4e14-bd1d-8b55d804de9b",
+  "vehicleId": "6a3be919-a179-49b9-8f40-e39c127d6ad0",
   "vehicleType": "BICYCLE",
   "description": "Se cortó la cadena en el centro",
   "problemType": "CHAIN",
@@ -14,27 +14,27 @@ Asistencia:
   "latitude": -34.6037,
   "longitude": -58.3816,
   "status": "MATCHED",
-  "assignedMechanicId": "9a8688fe-770d-4fe6-9021-3cf8380b5227",
-  "createdAt": "2026-10-13T00:13:41.344786Z"
+  "assignedMechanicId": "09215894-ff87-4dd1-97b4-51bfc8b9748a",
+  "createdAt": "2026-10-13T00:27:49.767510Z"
 }
 Despacho:
 {
-  "assistanceId": "d63bac61-1c4f-4989-809d-dc0c4daf8980",
-  "mechanicId": "9a8688fe-770d-4fe6-9021-3cf8380b5227",
+  "assistanceId": "2dbbf8d6-130e-4f20-ab49-165f89ac394c",
+  "mechanicId": "09215894-ff87-4dd1-97b4-51bfc8b9748a",
   "distanceKm": 0.04,
   "status": "MATCHED",
-  "createdAt": "2026-10-13T00:13:41.533265Z"
+  "createdAt": "2026-10-13T00:27:49.788570Z"
 }
 Historial de estados:
 [
   {
     "fromStatus": null,
     "toStatus": "REQUESTED",
-    "changedAt": "2026-10-13T00:13:41.348183Z"
+    "changedAt": "2026-10-13T00:27:49.768208Z"
   },
   {
     "fromStatus": "REQUESTED",
     "toStatus": "MATCHED",
-    "changedAt": "2026-10-13T00:13:41.581770Z"
+    "changedAt": "2026-10-13T00:27:49.794855Z"
   }
 ]

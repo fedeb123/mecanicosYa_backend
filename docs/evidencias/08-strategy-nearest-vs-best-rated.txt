@@ -1,38 +1,38 @@
 # E08 · Patrón Strategy configurable (dispatch.matching.strategy)
-# 2026-10-12 21:13:42 -0300 · commit dbf6c9b
+# 2026-10-12 21:27:50 -0300 · commit 4c196b1
 
-Un único mecánico con la habilidad STRATEGY_DEMO_1791850376, a unos 8 km del pedido.
-mecánico: 0bcb6282-9b60-41d0-aa9f-0f990842b687
+Un único mecánico con la habilidad STRATEGY_DEMO_1791851203, a unos 8 km del pedido.
+mecánico: 23853fcc-4367-4e55-ac63-dae05aacf10a
 
 ## Estrategia nearest (por defecto): elige al más cercano, sin límite de distancia
 $ docker compose exec dispatch-service printenv DISPATCH_MATCHING_STRATEGY
 nearest
 
-$ curl -X POST http://localhost:8082/api/assistances -H 'X-Correlation-Id: ev-strategy-nearest-1791850376' -H 'Content-Type: application/json' -d '{"clientId":"e6ba751a-c41b-4f1b-b665-bc920a3e655f","vehicleId":"8fb4ba12-2a91-4cff-8d3b-3b126e519b4d","description":"Pinchadura en el centro","problemType":"TIRE","requiredSkill":"STRATEGY_DEMO_1791850376","latitude":-34.6037,"longitude":-58.3816}'
+$ curl -X POST http://localhost:8082/api/assistances -H 'X-Correlation-Id: ev-strategy-nearest-1791851203' -H 'Content-Type: application/json' -d '{"clientId":"d200d4d3-e796-48d1-a3f9-53e94b65553b","vehicleId":"3990ceaf-9ed1-47a6-a2d5-fe68350a6e55","description":"Pinchadura en el centro","problemType":"TIRE","requiredSkill":"STRATEGY_DEMO_1791851203","latitude":-34.6037,"longitude":-58.3816}'
 HTTP 201 · 0.02s
 {
-  "id": "68ebfb16-b762-4511-9adb-70b5072975b9",
-  "clientId": "e6ba751a-c41b-4f1b-b665-bc920a3e655f",
-  "vehicleId": "8fb4ba12-2a91-4cff-8d3b-3b126e519b4d",
+  "id": "3be280f3-a8e9-4c19-99e9-2ee87bb9d31c",
+  "clientId": "d200d4d3-e796-48d1-a3f9-53e94b65553b",
+  "vehicleId": "3990ceaf-9ed1-47a6-a2d5-fe68350a6e55",
   "vehicleType": "BICYCLE",
   "description": "Pinchadura en el centro",
   "problemType": "TIRE",
-  "requiredSkill": "STRATEGY_DEMO_1791850376",
+  "requiredSkill": "STRATEGY_DEMO_1791851203",
   "latitude": -34.6037,
   "longitude": -58.3816,
   "status": "REQUESTED",
   "assignedMechanicId": null,
-  "createdAt": "2026-10-13T00:13:43.157141054Z"
+  "createdAt": "2026-10-13T00:27:51.258357210Z"
 }
 
-$ curl -X GET http://localhost:8083/api/dispatches/68ebfb16-b762-4511-9adb-70b5072975b9 -H 'X-Correlation-Id: ev-strategy-nearest-1791850376'
+$ curl -X GET http://localhost:8083/api/dispatches/3be280f3-a8e9-4c19-99e9-2ee87bb9d31c -H 'X-Correlation-Id: ev-strategy-nearest-1791851203'
 HTTP 200 · 0.01s
 {
-  "assistanceId": "68ebfb16-b762-4511-9adb-70b5072975b9",
-  "mechanicId": "0bcb6282-9b60-41d0-aa9f-0f990842b687",
+  "assistanceId": "3be280f3-a8e9-4c19-99e9-2ee87bb9d31c",
+  "mechanicId": "23853fcc-4367-4e55-ac63-dae05aacf10a",
   "distanceKm": 8.01,
   "status": "MATCHED",
-  "createdAt": "2026-10-13T00:13:43.170941Z"
+  "createdAt": "2026-10-13T00:27:51.272049Z"
 }
 
 ## Estrategia best-rated: mejor calificado dentro de 5 km
@@ -40,48 +40,48 @@ $ DISPATCH_MATCHING_STRATEGY=best-rated docker compose up -d --wait dispatch-ser
 $ docker compose exec dispatch-service printenv DISPATCH_MATCHING_STRATEGY
 best-rated
 
-$ curl -X POST http://localhost:8082/api/assistances -H 'X-Correlation-Id: ev-strategy-best-rated-1791850376' -H 'Content-Type: application/json' -d '{"clientId":"020b172c-4492-4a91-90a9-ec9144c4a80a","vehicleId":"3ec2e5f6-5f05-448d-b377-d05988db063c","description":"Pinchadura en el centro","problemType":"TIRE","requiredSkill":"STRATEGY_DEMO_1791850376","latitude":-34.6037,"longitude":-58.3816}'
-HTTP 201 · 0.16s
+$ curl -X POST http://localhost:8082/api/assistances -H 'X-Correlation-Id: ev-strategy-best-rated-1791851203' -H 'Content-Type: application/json' -d '{"clientId":"bfbdeeee-a304-45ee-8989-5c035b46cfa5","vehicleId":"7ef9b544-676b-498e-a654-43129a1b6afb","description":"Pinchadura en el centro","problemType":"TIRE","requiredSkill":"STRATEGY_DEMO_1791851203","latitude":-34.6037,"longitude":-58.3816}'
+HTTP 201 · 0.15s
 {
-  "id": "6b52d017-1a95-4a96-98da-ce8662e3a887",
-  "clientId": "020b172c-4492-4a91-90a9-ec9144c4a80a",
-  "vehicleId": "3ec2e5f6-5f05-448d-b377-d05988db063c",
+  "id": "b25f6cff-44c7-460b-be64-a436737bbb22",
+  "clientId": "bfbdeeee-a304-45ee-8989-5c035b46cfa5",
+  "vehicleId": "7ef9b544-676b-498e-a654-43129a1b6afb",
   "vehicleType": "BICYCLE",
   "description": "Pinchadura en el centro",
   "problemType": "TIRE",
-  "requiredSkill": "STRATEGY_DEMO_1791850376",
+  "requiredSkill": "STRATEGY_DEMO_1791851203",
   "latitude": -34.6037,
   "longitude": -58.3816,
   "status": "REQUESTED",
   "assignedMechanicId": null,
-  "createdAt": "2026-10-13T00:13:56.753665671Z"
+  "createdAt": "2026-10-13T00:28:04.853127216Z"
 }
 
-$ curl -X GET http://localhost:8083/api/dispatches/6b52d017-1a95-4a96-98da-ce8662e3a887 -H 'X-Correlation-Id: ev-strategy-best-rated-1791850376'
+$ curl -X GET http://localhost:8083/api/dispatches/b25f6cff-44c7-460b-be64-a436737bbb22 -H 'X-Correlation-Id: ev-strategy-best-rated-1791851203'
 HTTP 200 · 0.01s
 {
-  "assistanceId": "6b52d017-1a95-4a96-98da-ce8662e3a887",
+  "assistanceId": "b25f6cff-44c7-460b-be64-a436737bbb22",
   "mechanicId": null,
   "distanceKm": null,
   "status": "NO_CANDIDATE",
-  "createdAt": "2026-10-13T00:13:56.875347Z"
+  "createdAt": "2026-10-13T00:28:04.971889Z"
 }
 
-$ curl -X GET http://localhost:8082/api/assistances/6b52d017-1a95-4a96-98da-ce8662e3a887 -H 'X-Correlation-Id: ev-strategy-best-rated-1791850376'
+$ curl -X GET http://localhost:8082/api/assistances/b25f6cff-44c7-460b-be64-a436737bbb22 -H 'X-Correlation-Id: ev-strategy-best-rated-1791851203'
 HTTP 200 · 0.00s
 {
-  "id": "6b52d017-1a95-4a96-98da-ce8662e3a887",
-  "clientId": "020b172c-4492-4a91-90a9-ec9144c4a80a",
-  "vehicleId": "3ec2e5f6-5f05-448d-b377-d05988db063c",
+  "id": "b25f6cff-44c7-460b-be64-a436737bbb22",
+  "clientId": "bfbdeeee-a304-45ee-8989-5c035b46cfa5",
+  "vehicleId": "7ef9b544-676b-498e-a654-43129a1b6afb",
   "vehicleType": "BICYCLE",
   "description": "Pinchadura en el centro",
   "problemType": "TIRE",
-  "requiredSkill": "STRATEGY_DEMO_1791850376",
+  "requiredSkill": "STRATEGY_DEMO_1791851203",
   "latitude": -34.6037,
   "longitude": -58.3816,
   "status": "REQUESTED",
   "assignedMechanicId": null,
-  "createdAt": "2026-10-13T00:13:56.753666Z"
+  "createdAt": "2026-10-13T00:28:04.853127Z"
 }
 
 Con best-rated el mecánico queda fuera del radio de 5 km: NO_CANDIDATE y la asistencia sigue REQUESTED.
