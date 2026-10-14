@@ -1,0 +1,103 @@
+services:
+  postgres:
+    image: postgis/postgis:16-3.4
+    environment:
+      POSTGRES_USER: mecanicosya_admin
+      POSTGRES_PASSWORD: mecanicosya_admin_pass
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - mecanicosya-postgres-data:/var/lib/postgresql/data
+      - ./infra/postgres/init-databases.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mecanicosya_admin -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  mechanic-service:
+    restart: on-failure
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile
+      args:
+        MODULE: mechanic-service
+    environment:
+      SERVER_PORT: 8081
+      DB_URL: jdbc:postgresql://postgres:5432/mechanics_db
+      DB_USERNAME: mechanics_user
+      DB_PASSWORD: mechanics_pass
+      SPRING_DATASOURCE_HIKARI_INITIALIZATION_FAIL_TIMEOUT: 60000
+    ports:
+      - "8081:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8081/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  dispatch-service:
+    restart: on-failure
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile
+      args:
+        MODULE: dispatch-service
+    environment:
+      SERVER_PORT: 8083
+      DB_URL: jdbc:postgresql://postgres:5432/dispatch_db
+      DB_USERNAME: dispatch_user
+      DB_PASSWORD: dispatch_pass
+      SPRING_DATASOURCE_HIKARI_INITIALIZATION_FAIL_TIMEOUT: 60000
+      MECHANIC_SERVICE_URL: http://mechanic-service:8081
+      DISPATCH_MATCHING_STRATEGY: nearest
+    ports:
+      - "8083:8083"
+    depends_on:
+      mechanic-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8083/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  assistance-service:
+    restart: on-failure
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile
+      args:
+        MODULE: assistance-service
+    environment:
+      SERVER_PORT: 8082
+      DB_URL: jdbc:postgresql://postgres:5432/assistances_db
+      DB_USERNAME: assistances_user
+      DB_PASSWORD: assistances_pass
+      SPRING_DATASOURCE_HIKARI_INITIALIZATION_FAIL_TIMEOUT: 60000
+      DISPATCH_SERVICE_URL: http://dispatch-service:8083
+    ports:
+      - "8082:8082"
+    depends_on:
+      dispatch-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8082/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  frontend:
+    image: nginx:1.27-alpine
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+      - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - "8080:80"
+
+volumes:
+  mecanicosya-postgres-data:

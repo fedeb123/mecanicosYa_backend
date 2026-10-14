@@ -1,0 +1,292 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "OpenAPI definition",
+    "version": "v0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8081",
+      "description": "Generated server url"
+    }
+  ],
+  "paths": {
+    "/api/mechanics": {
+      "post": {
+        "tags": [
+          "Mechanics"
+        ],
+        "summary": "Register a mechanic (vehicleTypes defaults to BICYCLE)",
+        "operationId": "register",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMechanicRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/MechanicResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/mechanics/{id}/availability": {
+      "patch": {
+        "tags": [
+          "Mechanics"
+        ],
+        "summary": "Update availability and current location",
+        "operationId": "updateAvailability",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AvailabilityRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/MechanicResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/mechanics/{id}": {
+      "get": {
+        "tags": [
+          "Mechanics"
+        ],
+        "summary": "Get a mechanic",
+        "operationId": "find",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/MechanicResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/mechanics/candidates": {
+      "get": {
+        "tags": [
+          "Mechanics"
+        ],
+        "summary": "Find available mechanics with a required skill, optionally for a vehicle type",
+        "operationId": "findCandidates",
+        "parameters": [
+          {
+            "name": "skill",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "vehicleType",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "BICYCLE",
+                "E_BIKE",
+                "MOTORCYCLE"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MechanicResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CreateMechanicRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "minLength": 1
+          },
+          "latitude": {
+            "type": "number",
+            "format": "double",
+            "maximum": 90.0,
+            "minimum": -90.0
+          },
+          "longitude": {
+            "type": "number",
+            "format": "double",
+            "maximum": 180.0,
+            "minimum": -180.0
+          },
+          "skills": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "vehicleTypes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "BICYCLE",
+                "E_BIKE",
+                "MOTORCYCLE"
+              ]
+            },
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "email",
+          "name",
+          "skills"
+        ]
+      },
+      "MechanicResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "latitude": {
+            "type": "number",
+            "format": "double"
+          },
+          "longitude": {
+            "type": "number",
+            "format": "double"
+          },
+          "available": {
+            "type": "boolean"
+          },
+          "rating": {
+            "type": "number",
+            "format": "double"
+          },
+          "skills": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "vehicleTypes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "BICYCLE",
+                "E_BIKE",
+                "MOTORCYCLE"
+              ]
+            },
+            "uniqueItems": true
+          }
+        }
+      },
+      "AvailabilityRequest": {
+        "type": "object",
+        "properties": {
+          "available": {
+            "type": "boolean"
+          },
+          "latitude": {
+            "type": "number",
+            "format": "double",
+            "maximum": 90.0,
+            "minimum": -90.0
+          },
+          "longitude": {
+            "type": "number",
+            "format": "double",
+            "maximum": 180.0,
+            "minimum": -180.0
+          }
+        }
+      }
+    }
+  }
+}

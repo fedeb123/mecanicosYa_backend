@@ -1,0 +1,40 @@
+server:
+  port: ${SERVER_PORT:8081}
+
+spring:
+  threads:
+    virtual:
+      # Cada request HTTP corre en un virtual thread (Java 21+).
+      enabled: true
+  application:
+    name: mechanic-service
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/mechanics_db}
+    username: ${DB_USERNAME:mechanics_user}
+    password: ${DB_PASSWORD:mechanics_pass}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+logging:
+  pattern:
+    level: "%5p [${spring.application.name:},%X{correlationId:-}]"
+

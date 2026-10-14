@@ -1,0 +1,47 @@
+server:
+  port: ${SERVER_PORT:8083}
+
+spring:
+  threads:
+    virtual:
+      # Cada request HTTP corre en un virtual thread (Java 21+).
+      enabled: true
+  application:
+    name: dispatch-service
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/dispatch_db}
+    username: ${DB_USERNAME:dispatch_user}
+    password: ${DB_PASSWORD:dispatch_pass}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: update
+clients:
+  mechanic-service:
+    base-url: ${MECHANIC_SERVICE_URL:http://localhost:8081}
+    timeout: ${MECHANIC_SERVICE_TIMEOUT:3s}
+
+dispatch:
+  matching:
+    # nearest: el más cercano, con un ajuste leve por calificación
+    # best-rated: el mejor calificado dentro de max-distance-km
+    strategy: ${DISPATCH_MATCHING_STRATEGY:nearest}
+    max-distance-km: ${DISPATCH_MAX_DISTANCE_KM:5}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+logging:
+  pattern:
+    level: "%5p [${spring.application.name:},%X{correlationId:-}]"

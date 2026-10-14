@@ -1,0 +1,41 @@
+server:
+  port: ${SERVER_PORT:8082}
+
+spring:
+  threads:
+    virtual:
+      # Cada request HTTP corre en un virtual thread (Java 21+).
+      enabled: true
+  application:
+    name: assistance-service
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/assistances_db}
+    username: ${DB_USERNAME:assistances_user}
+    password: ${DB_PASSWORD:assistances_pass}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: update
+
+clients:
+  dispatch-service:
+    base-url: ${DISPATCH_SERVICE_URL:http://localhost:8083}
+    timeout: ${DISPATCH_SERVICE_TIMEOUT:5s}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+logging:
+  pattern:
+    level: "%5p [${spring.application.name:},%X{correlationId:-}]"

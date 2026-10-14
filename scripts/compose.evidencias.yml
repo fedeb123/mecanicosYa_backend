@@ -1,0 +1,15 @@
+# Ajustes de configuración para generar las evidencias (scripts/evidencias.sh).
+# Se combina con docker-compose.yml; no cambia código.
+services:
+  postgres:
+    # Los servicios usan la red interna de Compose: no hace falta publicar 5432 en el host
+    # (y así no choca con otra base local en ese puerto).
+    ports: !reset []
+  assistance-service:
+    environment:
+      # Muestra en el log las sentencias SQL que ejecuta el repositorio (acceso a datos local).
+      # Se usa JSON porque el logger org.hibernate.SQL lleva mayúsculas.
+      SPRING_APPLICATION_JSON: '{"logging":{"level":{"org.hibernate.SQL":"DEBUG"}}}'
+  dispatch-service:
+    environment:
+      DISPATCH_MATCHING_STRATEGY: ${DISPATCH_MATCHING_STRATEGY:-nearest}
