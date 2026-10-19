@@ -62,6 +62,10 @@ Para borrar también las bases de laboratorio:
 docker compose down --volumes
 ```
 
+## Despliegue público en OpenShift
+
+Para mostrarlo con una URL pública, `openshift/` tiene los manifiestos y un script que lo despliega en el Developer Sandbox de Red Hat. Los pasos están en [openshift/README.md](openshift/README.md).
+
 ## Endpoints y Swagger
 
 - Mechanics: [http://localhost:8081/swagger-ui.html](http://localhost:8081/swagger-ui.html)
