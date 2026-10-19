@@ -9,7 +9,8 @@ Levanta el mismo sistema que `docker compose` en un proyecto de OpenShift, con u
 | `postgres` | `postgres:16-alpine` | Volumen de 1 GiB. Crea las 3 bases y usuarios la primera vez. Sin PostGIS: el código no lo usa. |
 | `mechanic-service`, `dispatch-service`, `assistance-service` | construidas en el cluster con `Dockerfile.service` | Mismas variables que el compose. Probes en `/actuator/health/liveness` y `/readiness`. |
 | `frontend` | construida con `Dockerfile.frontend` (nginx sin root, puerto 8080) | Proxy a los tres servicios, como en el compose. |
-| Route `mecanicosya` | | Única entrada pública, https. Los servicios y la base no se exponen. |
+| Route `mecanicosya` | | Entrada pública de la consola, https. |
+| Routes `mechanic-service`, `dispatch-service`, `assistance-service` | | Opcionales (`swagger-routes.yaml`), para mostrar el Swagger de cada servicio en `/swagger-ui.html`. La base no se expone. |
 
 Diferencias con el compose, todas por cómo corre OpenShift:
 

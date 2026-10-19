@@ -20,6 +20,7 @@ done
 
 oc apply -f openshift/servicios.yaml
 oc apply -f openshift/frontend.yaml
+oc apply -f openshift/swagger-routes.yaml
 
 for deploy in postgres mechanic-service dispatch-service assistance-service frontend; do
   oc rollout status "deployment/$deploy" --timeout=10m
@@ -27,3 +28,6 @@ done
 
 echo
 echo "Listo: https://$(oc get route mecanicosya -o jsonpath='{.spec.host}')"
+for svc in mechanic-service dispatch-service assistance-service; do
+  echo "Swagger de $svc: https://$(oc get route "$svc" -o jsonpath='{.spec.host}')/swagger-ui.html"
+done

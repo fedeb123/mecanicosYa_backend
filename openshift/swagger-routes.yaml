@@ -1,0 +1,50 @@
+# Rutas públicas opcionales a cada microservicio, para mostrar su Swagger UI
+# (https://<host>/swagger-ui.html). La consola web no las necesita: usa la Route mecanicosya.
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: mechanic-service
+  labels:
+    app.kubernetes.io/part-of: mecanicosya
+spec:
+  to:
+    kind: Service
+    name: mechanic-service
+  port:
+    targetPort: 8081
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: dispatch-service
+  labels:
+    app.kubernetes.io/part-of: mecanicosya
+spec:
+  to:
+    kind: Service
+    name: dispatch-service
+  port:
+    targetPort: 8083
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: assistance-service
+  labels:
+    app.kubernetes.io/part-of: mecanicosya
+spec:
+  to:
+    kind: Service
+    name: assistance-service
+  port:
+    targetPort: 8082
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
