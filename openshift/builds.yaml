@@ -1,0 +1,138 @@
+# Imágenes construidas dentro del sandbox a partir del código local (oc start-build --from-dir).
+# No hace falta un registry propio ni compilar para amd64 en la Mac.
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: mechanic-service
+  labels:
+    app.kubernetes.io/part-of: mecanicosya
+spec:
+  lookupPolicy:
+    local: true
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: mechanic-service
+  labels:
+    app.kubernetes.io/part-of: mecanicosya
+spec:
+  source:
+    type: Binary
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: openshift/Dockerfile.service
+      buildArgs:
+        - name: MODULE
+          value: mechanic-service
+  output:
+    to:
+      kind: ImageStreamTag
+      name: mechanic-service:latest
+  resources:
+    limits:
+      cpu: "1"
+      memory: 2Gi
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: dispatch-service
+  labels:
+    app.kubernetes.io/part-of: mecanicosya
+spec:
+  lookupPolicy:
+    local: true
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: dispatch-service
+  labels:
+    app.kubernetes.io/part-of: mecanicosya
+spec:
+  source:
+    type: Binary
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: openshift/Dockerfile.service
+      buildArgs:
+        - name: MODULE
+          value: dispatch-service
+  output:
+    to:
+      kind: ImageStreamTag
+      name: dispatch-service:latest
+  resources:
+    limits:
+      cpu: "1"
+      memory: 2Gi
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: assistance-service
+  labels:
+    app.kubernetes.io/part-of: mecanicosya
+spec:
+  lookupPolicy:
+    local: true
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: assistance-service
+  labels:
+    app.kubernetes.io/part-of: mecanicosya
+spec:
+  source:
+    type: Binary
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: openshift/Dockerfile.service
+      buildArgs:
+        - name: MODULE
+          value: assistance-service
+  output:
+    to:
+      kind: ImageStreamTag
+      name: assistance-service:latest
+  resources:
+    limits:
+      cpu: "1"
+      memory: 2Gi
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: frontend
+  labels:
+    app.kubernetes.io/part-of: mecanicosya
+spec:
+  lookupPolicy:
+    local: true
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: frontend
+  labels:
+    app.kubernetes.io/part-of: mecanicosya
+spec:
+  source:
+    type: Binary
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: openshift/Dockerfile.frontend
+  output:
+    to:
+      kind: ImageStreamTag
+      name: frontend:latest
+  resources:
+    limits:
+      cpu: "1"
+      memory: 512Mi

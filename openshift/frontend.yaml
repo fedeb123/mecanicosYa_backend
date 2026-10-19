@@ -1,0 +1,61 @@
+# Consola web y única entrada pública: la Route da una URL https y nginx hace de proxy
+# hacia los tres servicios, igual que en docker compose.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  labels:
+    app: frontend
+    app.kubernetes.io/part-of: mecanicosya
+  annotations:
+    image.openshift.io/triggers: '[{"from":{"kind":"ImageStreamTag","name":"frontend:latest"},"fieldPath":"spec.template.spec.containers[?(@.name==\"app\")].image"}]'
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: app
+          image: frontend:latest
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet: {path: /, port: 8080}
+            periodSeconds: 10
+          resources:
+            requests: {cpu: 20m, memory: 32Mi}
+            limits: {cpu: 200m, memory: 128Mi}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  labels:
+    app.kubernetes.io/part-of: mecanicosya
+spec:
+  selector:
+    app: frontend
+  ports:
+    - port: 8080
+      targetPort: 8080
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: mecanicosya
+  labels:
+    app.kubernetes.io/part-of: mecanicosya
+spec:
+  to:
+    kind: Service
+    name: frontend
+  port:
+    targetPort: 8080
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect

@@ -1,0 +1,112 @@
+# PostgreSQL con un volumen persistente. El código no usa PostGIS, así que alcanza la imagen
+# oficial de postgres (que acepta correr con el UID aleatorio de OpenShift).
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres-credentials
+  labels:
+    app.kubernetes.io/part-of: mecanicosya
+stringData:
+  # Mismos valores que docker-compose.yml. La base no queda expuesta fuera del proyecto.
+  POSTGRES_USER: mecanicosya_admin
+  POSTGRES_PASSWORD: mecanicosya_admin_pass
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-init
+  labels:
+    app.kubernetes.io/part-of: mecanicosya
+data:
+  # Equivalente a infra/postgres/init-databases.sql sin la extensión postgis.
+  # Corre una sola vez, cuando el volumen está vacío.
+  01-init-databases.sql: |
+    CREATE USER mechanics_user WITH PASSWORD 'mechanics_pass';
+    CREATE USER assistances_user WITH PASSWORD 'assistances_pass';
+    CREATE USER dispatch_user WITH PASSWORD 'dispatch_pass';
+
+    CREATE DATABASE mechanics_db OWNER mechanics_user;
+    CREATE DATABASE assistances_db OWNER assistances_user;
+    CREATE DATABASE dispatch_db OWNER dispatch_user;
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-data
+  labels:
+    app.kubernetes.io/part-of: mecanicosya
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  labels:
+    app: postgres
+    app.kubernetes.io/part-of: mecanicosya
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: mirror.gcr.io/library/postgres:16-alpine
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef: {name: postgres-credentials, key: POSTGRES_USER}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef: {name: postgres-credentials, key: POSTGRES_PASSWORD}
+            - name: POSTGRES_DB
+              value: postgres
+            # Subcarpeta: la raíz del volumen puede traer lost+found y initdb la rechaza.
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+            - name: init
+              mountPath: /docker-entrypoint-initdb.d
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U \"$POSTGRES_USER\" -d postgres"]
+            periodSeconds: 5
+          resources:
+            requests: {cpu: 50m, memory: 256Mi}
+            limits: {cpu: 500m, memory: 512Mi}
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: postgres-data
+        - name: init
+          configMap:
+            name: postgres-init
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  labels:
+    app.kubernetes.io/part-of: mecanicosya
+spec:
+  selector:
+    app: postgres
+  ports:
+    - port: 5432
+      targetPort: 5432

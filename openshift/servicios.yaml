@@ -1,0 +1,205 @@
+# Los tres microservicios. Mismas variables que docker-compose.yml; los nombres de host
+# son los Services del proyecto.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mechanic-service
+  labels:
+    app: mechanic-service
+    app.kubernetes.io/part-of: mecanicosya
+  annotations:
+    # Redespliega solo cuando termina un build nuevo de la imagen.
+    image.openshift.io/triggers: '[{"from":{"kind":"ImageStreamTag","name":"mechanic-service:latest"},"fieldPath":"spec.template.spec.containers[?(@.name==\"app\")].image"}]'
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mechanic-service
+  template:
+    metadata:
+      labels:
+        app: mechanic-service
+    spec:
+      containers:
+        - name: app
+          image: mechanic-service:latest
+          ports:
+            - containerPort: 8081
+          env:
+            - name: SERVER_PORT
+              value: "8081"
+            - name: DB_URL
+              value: jdbc:postgresql://postgres:5432/mechanics_db
+            - name: DB_USERNAME
+              value: mechanics_user
+            - name: DB_PASSWORD
+              value: mechanics_pass
+            - name: SPRING_DATASOURCE_HIKARI_INITIALIZATION_FAIL_TIMEOUT
+              value: "60000"
+            # Por defecto la JVM usa solo el 25 % de la memoria del contenedor para el heap.
+            - name: JAVA_TOOL_OPTIONS
+              value: -XX:MaxRAMPercentage=70
+          startupProbe:
+            httpGet: {path: /actuator/health/liveness, port: 8081}
+            periodSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            httpGet: {path: /actuator/health/readiness, port: 8081}
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: {path: /actuator/health/liveness, port: 8081}
+            periodSeconds: 20
+          resources:
+            requests: {cpu: 100m, memory: 512Mi}
+            limits: {cpu: 750m, memory: 1Gi}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mechanic-service
+  labels:
+    app.kubernetes.io/part-of: mecanicosya
+spec:
+  selector:
+    app: mechanic-service
+  ports:
+    - port: 8081
+      targetPort: 8081
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dispatch-service
+  labels:
+    app: dispatch-service
+    app.kubernetes.io/part-of: mecanicosya
+  annotations:
+    # Redespliega solo cuando termina un build nuevo de la imagen.
+    image.openshift.io/triggers: '[{"from":{"kind":"ImageStreamTag","name":"dispatch-service:latest"},"fieldPath":"spec.template.spec.containers[?(@.name==\"app\")].image"}]'
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dispatch-service
+  template:
+    metadata:
+      labels:
+        app: dispatch-service
+    spec:
+      containers:
+        - name: app
+          image: dispatch-service:latest
+          ports:
+            - containerPort: 8083
+          env:
+            - name: SERVER_PORT
+              value: "8083"
+            - name: DB_URL
+              value: jdbc:postgresql://postgres:5432/dispatch_db
+            - name: DB_USERNAME
+              value: dispatch_user
+            - name: DB_PASSWORD
+              value: dispatch_pass
+            - name: SPRING_DATASOURCE_HIKARI_INITIALIZATION_FAIL_TIMEOUT
+              value: "60000"
+            - name: MECHANIC_SERVICE_URL
+              value: "http://mechanic-service:8081"
+            - name: DISPATCH_MATCHING_STRATEGY
+              value: "nearest"
+            # Por defecto la JVM usa solo el 25 % de la memoria del contenedor para el heap.
+            - name: JAVA_TOOL_OPTIONS
+              value: -XX:MaxRAMPercentage=70
+          startupProbe:
+            httpGet: {path: /actuator/health/liveness, port: 8083}
+            periodSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            httpGet: {path: /actuator/health/readiness, port: 8083}
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: {path: /actuator/health/liveness, port: 8083}
+            periodSeconds: 20
+          resources:
+            requests: {cpu: 100m, memory: 512Mi}
+            limits: {cpu: 750m, memory: 1Gi}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dispatch-service
+  labels:
+    app.kubernetes.io/part-of: mecanicosya
+spec:
+  selector:
+    app: dispatch-service
+  ports:
+    - port: 8083
+      targetPort: 8083
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: assistance-service
+  labels:
+    app: assistance-service
+    app.kubernetes.io/part-of: mecanicosya
+  annotations:
+    # Redespliega solo cuando termina un build nuevo de la imagen.
+    image.openshift.io/triggers: '[{"from":{"kind":"ImageStreamTag","name":"assistance-service:latest"},"fieldPath":"spec.template.spec.containers[?(@.name==\"app\")].image"}]'
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: assistance-service
+  template:
+    metadata:
+      labels:
+        app: assistance-service
+    spec:
+      containers:
+        - name: app
+          image: assistance-service:latest
+          ports:
+            - containerPort: 8082
+          env:
+            - name: SERVER_PORT
+              value: "8082"
+            - name: DB_URL
+              value: jdbc:postgresql://postgres:5432/assistances_db
+            - name: DB_USERNAME
+              value: assistances_user
+            - name: DB_PASSWORD
+              value: assistances_pass
+            - name: SPRING_DATASOURCE_HIKARI_INITIALIZATION_FAIL_TIMEOUT
+              value: "60000"
+            - name: DISPATCH_SERVICE_URL
+              value: "http://dispatch-service:8083"
+            # Por defecto la JVM usa solo el 25 % de la memoria del contenedor para el heap.
+            - name: JAVA_TOOL_OPTIONS
+              value: -XX:MaxRAMPercentage=70
+          startupProbe:
+            httpGet: {path: /actuator/health/liveness, port: 8082}
+            periodSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            httpGet: {path: /actuator/health/readiness, port: 8082}
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: {path: /actuator/health/liveness, port: 8082}
+            periodSeconds: 20
+          resources:
+            requests: {cpu: 100m, memory: 512Mi}
+            limits: {cpu: 750m, memory: 1Gi}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: assistance-service
+  labels:
+    app.kubernetes.io/part-of: mecanicosya
+spec:
+  selector:
+    app: assistance-service
+  ports:
+    - port: 8082
+      targetPort: 8082
