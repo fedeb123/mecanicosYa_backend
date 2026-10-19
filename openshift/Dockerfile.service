@@ -1,0 +1,18 @@
+# Imagen de un microservicio para OpenShift. Se diferencia de infra/docker/Dockerfile en:
+# - las imágenes base salen de mirror.gcr.io (el cluster compartido choca con el límite de Docker Hub);
+# - compila solo el módulo pedido y sus dependencias (-pl -am);
+# - no instala curl: los healthchecks pasan a ser probes HTTP de OpenShift.
+# OpenShift corre el contenedor con un UID aleatorio y grupo 0; /app queda legible para cualquiera.
+FROM mirror.gcr.io/library/maven:3.9.11-eclipse-temurin-25 AS build
+ARG MODULE
+WORKDIR /workspace
+COPY . .
+RUN mvn -B -q -pl "${MODULE}" -am package -DskipTests
+
+FROM mirror.gcr.io/library/eclipse-temurin:25-jre
+ARG MODULE
+WORKDIR /app
+COPY --from=build "/workspace/${MODULE}/target/${MODULE}-0.1.0-SNAPSHOT.jar" app.jar
+USER 1001
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]
