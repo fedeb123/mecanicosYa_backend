@@ -1,0 +1,7 @@
+identity:
+  admin:
+    email: admin@mecanicosya.test
+    password: admin-test-password
+  service-clients:
+    "[dispatch-service]": dispatch-test-secret
+    "[assistance-service]": ""
