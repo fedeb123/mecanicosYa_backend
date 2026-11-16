@@ -3,6 +3,7 @@ package com.uade.mecanicosya.mechanics.domain;
 import org.junit.jupiter.api.Test;
 
 import java.util.Set;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -13,6 +14,7 @@ class MechanicFactoryTest {
     @Test
     void normalizesEmailAndSkills() {
         Mechanic mechanic = factory.create(
+                UUID.randomUUID(),
                 "Ada Mecánica",
                 "ADA@EXAMPLE.COM",
                 -34.6037,
@@ -29,6 +31,7 @@ class MechanicFactoryTest {
     @Test
     void servesBicyclesWhenNoVehicleTypeIsDeclared() {
         Mechanic mechanic = factory.create(
+                UUID.randomUUID(),
                 "Ada Mecánica",
                 "ada@example.com",
                 -34.6037,
@@ -44,6 +47,7 @@ class MechanicFactoryTest {
     @Test
     void keepsTheDeclaredVehicleTypes() {
         Mechanic mechanic = factory.create(
+                UUID.randomUUID(),
                 "Moto Mecánico",
                 "moto@example.com",
                 -34.6037,

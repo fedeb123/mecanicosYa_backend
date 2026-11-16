@@ -58,6 +58,11 @@ public class Mechanic {
     @Column(name = "vehicle_type", nullable = false, length = 20)
     private Set<VehicleType> vehicleTypes = EnumSet.noneOf(VehicleType.class);
 
+    // El default llena las filas que ya existían cuando se agregó la columna.
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 30, columnDefinition = "varchar(30) default 'PENDING_VERIFICATION' not null")
+    private VerificationStatus verificationStatus = VerificationStatus.PENDING_VERIFICATION;
+
     @Version
     private long version;
 
@@ -82,9 +87,14 @@ public class Mechanic {
         this.vehicleTypes = normalizeVehicleTypes(vehicleTypes);
         this.available = false;
         this.rating = 5.0;
+        this.verificationStatus = VerificationStatus.PENDING_VERIFICATION;
     }
 
+    /** Ponerse disponible exige estar aprobado; dejar de estarlo, no. */
     public void changeAvailability(boolean available, double latitude, double longitude) {
+        if (available && !isApproved()) {
+            throw new MechanicNotApprovedException(id);
+        }
         this.available = available;
         this.latitude = latitude;
         this.longitude = longitude;
@@ -100,6 +110,14 @@ public class Mechanic {
         }
         this.rating = (rating * ratingCount + score) / (ratingCount + 1);
         this.ratingCount++;
+    }
+
+    public void approve() {
+        this.verificationStatus = VerificationStatus.APPROVED;
+    }
+
+    public boolean isApproved() {
+        return verificationStatus == VerificationStatus.APPROVED;
     }
 
     public boolean hasSkill(String requiredSkill) {
@@ -167,6 +185,10 @@ public class Mechanic {
 
     public Set<String> getSkills() {
         return Collections.unmodifiableSet(skills);
+    }
+
+    public VerificationStatus getVerificationStatus() {
+        return verificationStatus;
     }
 
     public Set<VehicleType> getVehicleTypes() {

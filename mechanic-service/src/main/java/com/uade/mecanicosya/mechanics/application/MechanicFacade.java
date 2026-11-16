@@ -6,6 +6,7 @@ import com.uade.mecanicosya.mechanics.domain.MechanicRating;
 import com.uade.mecanicosya.mechanics.domain.MechanicRatingRepository;
 import com.uade.mecanicosya.mechanics.domain.MechanicRepository;
 import com.uade.mecanicosya.mechanics.domain.VehicleType;
+import com.uade.mecanicosya.mechanics.domain.VerificationStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -24,19 +25,24 @@ public class MechanicFacade {
     private final MechanicRepository repository;
     private final MechanicFactory factory;
     private final MechanicRatingRepository ratingRepository;
+    private final MechanicEventPublisher eventPublisher;
 
     public MechanicFacade(
             MechanicRepository repository,
             MechanicFactory factory,
-            MechanicRatingRepository ratingRepository
+            MechanicRatingRepository ratingRepository,
+            MechanicEventPublisher eventPublisher
     ) {
         this.repository = repository;
         this.factory = factory;
         this.ratingRepository = ratingRepository;
+        this.eventPublisher = eventPublisher;
     }
 
+    /** El perfil del mecánico de la cuenta {@code id}. Queda pendiente de validación hasta que un admin lo apruebe. */
     @Transactional
     public Mechanic register(
+            UUID id,
             String name,
             String email,
             double latitude,
@@ -44,7 +50,31 @@ public class MechanicFacade {
             Set<String> skills,
             Set<VehicleType> vehicleTypes
     ) {
-        return repository.save(factory.create(name, email, latitude, longitude, skills, vehicleTypes));
+        if (repository.existsById(id)) {
+            throw new MechanicAlreadyRegisteredException(id);
+        }
+        return repository.save(factory.create(id, name, email, latitude, longitude, skills, vehicleTypes));
+    }
+
+    /**
+     * Aprueba al mecánico y avisa por Kafka para que su próximo token lo diga. Aprobar dos veces vuelve a publicar
+     * el evento, y eso sirve para reparar una copia desactualizada en identity-service.
+     */
+    @Transactional
+    public Mechanic approve(UUID id) {
+        Mechanic mechanic = find(id);
+        mechanic.approve();
+        Mechanic saved = repository.save(mechanic);
+        eventPublisher.verificationChanged(saved);
+        LOGGER.info("Mechanic {} approved", id);
+        return saved;
+    }
+
+    @Transactional(readOnly = true)
+    public List<Mechanic> list(VerificationStatus status) {
+        return status == null
+                ? repository.findAllByOrderByNameAsc()
+                : repository.findByVerificationStatusOrderByNameAsc(status);
     }
 
     @Transactional(readOnly = true)

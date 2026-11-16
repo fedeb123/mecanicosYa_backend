@@ -3,6 +3,7 @@ package com.uade.mecanicosya.mechanics.domain;
 import org.junit.jupiter.api.Test;
 
 import java.util.Set;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -10,6 +11,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class MechanicTest {
 
     private final Mechanic mechanic = new MechanicFactory().create(
+            UUID.randomUUID(),
             "Ada Mecánica",
             "ada@example.com",
             -34.6037,
@@ -38,5 +40,18 @@ class MechanicTest {
     void rejectsRatingsOutsideOneToFive() {
         assertThatThrownBy(() -> mechanic.addRating(0)).isInstanceOf(IllegalArgumentException.class);
         assertThat(mechanic.getRatingCount()).isZero();
+    }
+
+    @Test
+    void cannotGoAvailableUntilApproved() {
+        assertThat(mechanic.getVerificationStatus()).isEqualTo(VerificationStatus.PENDING_VERIFICATION);
+        assertThatThrownBy(() -> mechanic.changeAvailability(true, -34.6, -58.4))
+                .isInstanceOf(MechanicNotApprovedException.class);
+
+        mechanic.changeAvailability(false, -34.6, -58.4);
+        mechanic.approve();
+        mechanic.changeAvailability(true, -34.6, -58.4);
+
+        assertThat(mechanic.isAvailable()).isTrue();
     }
 }

@@ -8,7 +8,9 @@ import java.util.UUID;
 @Component
 public class MechanicFactory {
 
+    /** Crea el perfil con el id de la cuenta en identity-service, que es el {@code sub} del token. */
     public Mechanic create(
+            UUID id,
             String name,
             String email,
             double latitude,
@@ -17,7 +19,7 @@ public class MechanicFactory {
             Set<VehicleType> vehicleTypes
     ) {
         return new Mechanic(
-                UUID.randomUUID(),
+                id,
                 name.trim(),
                 email.trim().toLowerCase(),
                 latitude,
