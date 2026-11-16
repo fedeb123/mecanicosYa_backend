@@ -22,6 +22,15 @@ clients:
     base-url: ${DISPATCH_SERVICE_URL:http://localhost:8083}
     timeout: ${DISPATCH_SERVICE_TIMEOUT:5s}
 
+assistance:
+  requests:
+    # Un pedido que estuvo en cola en el teléfono más de esto se rechaza con 422 REQUEST_EXPIRED
+    max-age: ${ASSISTANCE_REQUEST_MAX_AGE:PT15M}
+    max-clock-skew: ${ASSISTANCE_MAX_CLOCK_SKEW:PT5M}
+  offers:
+    # Cada cuánto se pasan a UNMATCHED los pedidos cuya ronda de ofertas venció
+    expiry-check: ${ASSISTANCE_OFFER_EXPIRY_CHECK:PT15S}
+
 management:
   endpoints:
     web:

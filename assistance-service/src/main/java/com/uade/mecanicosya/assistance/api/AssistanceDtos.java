@@ -25,8 +25,12 @@ public final class AssistanceDtos {
             @NotBlank String problemType,
             @NotBlank String requiredSkill,
             @DecimalMin("-90.0") @DecimalMax("90.0") double latitude,
-            @DecimalMin("-180.0") @DecimalMax("180.0") double longitude
+            @DecimalMin("-180.0") @DecimalMax("180.0") double longitude,
+            Instant clientCreatedAt
     ) {
+    }
+
+    public record AssignMechanicRequest(@NotNull UUID mechanicId) {
     }
 
     public record AssistanceResponse(
@@ -41,6 +45,9 @@ public final class AssistanceDtos {
             double longitude,
             AssistanceStatus status,
             UUID assignedMechanicId,
+            Instant offersExpireAt,
+            String idempotencyKey,
+            Instant clientCreatedAt,
             Instant createdAt
     ) {
         public static AssistanceResponse from(AssistanceRequest assistance) {
@@ -56,6 +63,9 @@ public final class AssistanceDtos {
                     assistance.getLongitude(),
                     assistance.getStatus(),
                     assistance.getAssignedMechanicId(),
+                    assistance.getOffersExpireAt(),
+                    assistance.getIdempotencyKey(),
+                    assistance.getClientCreatedAt(),
                     assistance.getCreatedAt()
             );
         }

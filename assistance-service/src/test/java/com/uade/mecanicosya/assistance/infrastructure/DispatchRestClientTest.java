@@ -16,6 +16,7 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -58,6 +59,27 @@ class DispatchRestClientTest {
                 UUID.fromString("6f1c8f4e-1b7a-4c1e-9b1a-2a8c9d0e1f23"),
                 0.4
         ));
+    }
+
+    @Test
+    void readsAnOfferedAnswer() throws IOException {
+        startServer(200, """
+                {"assistanceId":"0b7e2a3c-5d6f-4a1b-8c9d-0e1f2a3b4c5d","status":"OFFERED","round":1,
+                 "offersExpireAt":"2026-09-28T12:02:00Z",
+                 "offers":[{"mechanicId":"6f1c8f4e-1b7a-4c1e-9b1a-2a8c9d0e1f23","distanceKm":0.4,"ranking":1,"status":"PENDING"}],
+                 "createdAt":"2026-09-28T12:00:00Z"}
+                """, Duration.ZERO);
+
+        DispatchOutcome outcome = client(baseUrl(), Duration.ofSeconds(2)).dispatch(command);
+
+        assertThat(outcome).isEqualTo(new DispatchOutcome.Offered(Instant.parse("2026-09-28T12:02:00Z"), 1));
+    }
+
+    @Test
+    void cancellingAnAssistanceThatWasNeverDispatchedIsNotAnError() throws IOException {
+        startServer(404, "{}", Duration.ZERO);
+
+        client(baseUrl(), Duration.ofSeconds(2)).cancel(assistanceId);
     }
 
     @Test

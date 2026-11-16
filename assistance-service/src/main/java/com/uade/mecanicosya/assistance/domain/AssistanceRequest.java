@@ -9,6 +9,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import jakarta.persistence.Version;
 
 import java.time.Instant;
@@ -16,7 +17,13 @@ import java.util.Locale;
 import java.util.UUID;
 
 @Entity
-@Table(name = "assistance_requests")
+@Table(
+        name = "assistance_requests",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_assistance_client_idempotency_key",
+                columnNames = {"client_id", "idempotency_key"}
+        )
+)
 public class AssistanceRequest {
 
     @Id
@@ -58,6 +65,16 @@ public class AssistanceRequest {
     @Column(nullable = false)
     private Instant createdAt;
 
+    /** Clave que manda la app para que un reintento no cree un pedido duplicado. */
+    @Column(name = "idempotency_key", length = 100)
+    private String idempotencyKey;
+
+    /** Hora del teléfono al crear el pedido; puede ser anterior a createdAt si estuvo en cola sin conexión. */
+    private Instant clientCreatedAt;
+
+    /** Hasta cuándo los mecánicos pueden aceptar la ronda de ofertas actual. */
+    private Instant offersExpireAt;
+
     @Version
     private long version;
 
@@ -74,6 +91,22 @@ public class AssistanceRequest {
             double latitude,
             double longitude,
             Instant createdAt
+    ) {
+        this(id, client, vehicle, description, problemType, requiredSkill, latitude, longitude, createdAt, null, null);
+    }
+
+    public AssistanceRequest(
+            UUID id,
+            Client client,
+            Vehicle vehicle,
+            String description,
+            String problemType,
+            String requiredSkill,
+            double latitude,
+            double longitude,
+            Instant createdAt,
+            String idempotencyKey,
+            Instant clientCreatedAt
     ) {
         if (client == null || vehicle == null) {
             throw new IllegalArgumentException("Client and vehicle are required");
@@ -92,12 +125,41 @@ public class AssistanceRequest {
         this.longitude = longitude;
         this.status = AssistanceStatus.REQUESTED;
         this.createdAt = createdAt;
+        this.idempotencyKey = idempotencyKey;
+        this.clientCreatedAt = clientCreatedAt;
     }
 
+    /**
+     * dispatch-service ofreció el pedido; queda publicado hasta {@code expiresAt}.
+     */
+    public void awaitOffers(Instant expiresAt) {
+        requireStatus("wait for offers", AssistanceStatus.REQUESTED);
+        this.offersExpireAt = expiresAt;
+    }
+
+    /**
+     * Un mecánico tomó el pedido. Repetir la asignación del mismo mecánico no cambia nada; otro mecánico es un
+     * conflicto.
+     */
     public void assignMechanic(UUID mechanicId) {
-        requireStatus("receive a mechanic", AssistanceStatus.REQUESTED, AssistanceStatus.MATCHED);
+        if (status == AssistanceStatus.MATCHED && mechanicId.equals(assignedMechanicId)) {
+            return;
+        }
+        requireStatus("receive a mechanic", AssistanceStatus.REQUESTED);
         this.assignedMechanicId = mechanicId;
+        this.offersExpireAt = null;
         this.status = AssistanceStatus.MATCHED;
+    }
+
+    public void markUnmatched() {
+        requireStatus("be left without a mechanic", AssistanceStatus.REQUESTED);
+        this.offersExpireAt = null;
+        this.status = AssistanceStatus.UNMATCHED;
+    }
+
+    public void republish() {
+        requireStatus("be published again", AssistanceStatus.UNMATCHED);
+        this.status = AssistanceStatus.REQUESTED;
     }
 
     public void start() {
@@ -110,13 +172,21 @@ public class AssistanceRequest {
         this.status = AssistanceStatus.COMPLETED;
     }
 
+    /**
+     * Cancelar dos veces no es un error: la app puede reintentar la cancelación.
+     */
     public void cancel() {
+        if (status == AssistanceStatus.CANCELLED) {
+            return;
+        }
         requireStatus(
                 "be cancelled",
                 AssistanceStatus.REQUESTED,
+                AssistanceStatus.UNMATCHED,
                 AssistanceStatus.MATCHED,
                 AssistanceStatus.IN_PROGRESS
         );
+        this.offersExpireAt = null;
         this.status = AssistanceStatus.CANCELLED;
     }
 
@@ -182,5 +252,17 @@ public class AssistanceRequest {
 
     public Instant getCreatedAt() {
         return createdAt;
+    }
+
+    public String getIdempotencyKey() {
+        return idempotencyKey;
+    }
+
+    public Instant getClientCreatedAt() {
+        return clientCreatedAt;
+    }
+
+    public Instant getOffersExpireAt() {
+        return offersExpireAt;
     }
 }

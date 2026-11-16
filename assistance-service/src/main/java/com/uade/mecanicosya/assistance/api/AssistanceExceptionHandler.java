@@ -5,14 +5,17 @@ import com.uade.mecanicosya.assistance.application.ClientNotFoundException;
 import com.uade.mecanicosya.assistance.application.DispatchFailedException;
 import com.uade.mecanicosya.assistance.application.DispatchUnavailableException;
 import com.uade.mecanicosya.assistance.application.DuplicateClientException;
+import com.uade.mecanicosya.assistance.application.RequestExpiredException;
 import com.uade.mecanicosya.assistance.application.VehicleNotFoundException;
 import com.uade.mecanicosya.assistance.domain.InvalidStatusTransitionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -49,6 +52,27 @@ public class AssistanceExceptionHandler {
         return problem;
     }
 
+    @ExceptionHandler(MissingRequestHeaderException.class)
+    ProblemDetail missingHeader(MissingRequestHeaderException exception) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.BAD_REQUEST,
+                "The " + exception.getHeaderName() + " header is required"
+        );
+        problem.setTitle("Missing header");
+        if (AssistanceController.IDEMPOTENCY_KEY.equals(exception.getHeaderName())) {
+            problem.setProperty("code", "IDEMPOTENCY_KEY_REQUIRED");
+        }
+        return problem;
+    }
+
+    @ExceptionHandler(RequestExpiredException.class)
+    ProblemDetail requestExpired(RequestExpiredException exception) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_CONTENT, exception.getMessage());
+        problem.setTitle("Request expired");
+        problem.setProperty("code", "REQUEST_EXPIRED");
+        return problem;
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     ProblemDetail invalidInput(IllegalArgumentException exception) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.getMessage());
@@ -59,7 +83,8 @@ public class AssistanceExceptionHandler {
     @ExceptionHandler({
             InvalidStatusTransitionException.class,
             DuplicateClientException.class,
-            DataIntegrityViolationException.class
+            DataIntegrityViolationException.class,
+            OptimisticLockingFailureException.class
     })
     ProblemDetail conflict(RuntimeException exception) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, exception.getMessage());
