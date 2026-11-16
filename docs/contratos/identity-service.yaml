@@ -1,0 +1,251 @@
+openapi: 3.1.0
+info:
+  title: MecanicosYa · identity-service
+  description: "Cuentas de repartidor, mecánico y admin: alta, login, refresh y logout\
+    \ con JWT, token de servicio y la clave pública (JWKS) con la que los otros servicios\
+    \ validan los tokens. Consume mechanic.events."
+  version: "2.0"
+servers:
+- url: http://localhost:8084
+  description: Generated server url
+security:
+- bearerAuth: []
+paths:
+  /api/auth/service-token:
+    post:
+      tags:
+      - Auth
+      summary: Token with role SERVICE for calls between services (client id and secret)
+      operationId: serviceToken
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ServiceTokenRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ServiceTokenResponse"
+  /api/auth/register:
+    post:
+      tags:
+      - Auth
+      summary: Sign up as RIDER or MECHANIC and get a session; a mechanic starts PENDING_VERIFICATION
+      description: The returned userId is the id to use when creating the rider or
+        mechanic profile.
+      operationId: register
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/TokenResponse"
+  /api/auth/refresh:
+    post:
+      tags:
+      - Auth
+      summary: Trade a refresh token for a new session; the old refresh token stops
+        working
+      description: The new access token carries the current verification status of
+        a mechanic.
+      operationId: refresh
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/TokenResponse"
+  /api/auth/logout:
+    post:
+      tags:
+      - Auth
+      summary: Revoke a refresh token
+      operationId: logout
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+  /api/auth/login:
+    post:
+      tags:
+      - Auth
+      summary: Log in with email and password; 401 if either is wrong
+      operationId: login
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/TokenResponse"
+  /api/auth/me:
+    get:
+      tags:
+      - Auth
+      summary: The account of the access token
+      operationId: me
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/MeResponse"
+  /.well-known/jwks.json:
+    get:
+      tags:
+      - Auth
+      summary: Public keys that verify the access tokens
+      operationId: keys
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: object
+                additionalProperties: {}
+components:
+  schemas:
+    ServiceTokenRequest:
+      type: object
+      properties:
+        clientId:
+          type: string
+          minLength: 1
+        clientSecret:
+          type: string
+          minLength: 1
+      required:
+      - clientId
+      - clientSecret
+    ServiceTokenResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+    RegisterRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 180
+          minLength: 0
+        password:
+          type: string
+          maxLength: 72
+          minLength: 8
+        role:
+          type: string
+          enum:
+          - RIDER
+          - MECHANIC
+          - ADMIN
+          - SERVICE
+      required:
+      - email
+      - password
+      - role
+    TokenResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+        userId:
+          type: string
+          format: uuid
+        role:
+          type: string
+          enum:
+          - RIDER
+          - MECHANIC
+          - ADMIN
+          - SERVICE
+        verificationStatus:
+          type: string
+          enum:
+          - PENDING_VERIFICATION
+          - APPROVED
+    RefreshRequest:
+      type: object
+      properties:
+        refreshToken:
+          type: string
+          minLength: 1
+      required:
+      - refreshToken
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          minLength: 1
+        password:
+          type: string
+          minLength: 1
+      required:
+      - email
+      - password
+    MeResponse:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+        email:
+          type: string
+        role:
+          type: string
+          enum:
+          - RIDER
+          - MECHANIC
+          - ADMIN
+          - SERVICE
+        verificationStatus:
+          type: string
+          enum:
+          - PENDING_VERIFICATION
+          - APPROVED
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

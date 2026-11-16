@@ -1,0 +1,681 @@
+openapi: 3.1.0
+info:
+  title: MecanicosYa · assistance-service
+  description: "Repartidores, vehículos y pedidos de asistencia: alta idempotente,\
+    \ clasificación del texto con IA, estados, cancelación y calificación. Publica\
+    \ assistance.events y consume dispatch.events."
+  version: "2.0"
+servers:
+- url: http://localhost:8082
+  description: Generated server url
+security:
+- bearerAuth: []
+paths:
+  /api/triage:
+    post:
+      tags:
+      - Triage
+      summary: "Classify the description of a problem into a problem type, required\
+        \ skill and urgency"
+      description: Uses the Claude API when ANTHROPIC_API_KEY is set and falls back
+        to keywords when it is not set or does not answer. Only the description and
+        the vehicle type are sent.
+      operationId: classify
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TriageRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/TriageResponse"
+  /api/clients:
+    post:
+      tags:
+      - Clients
+      summary: Create the profile of the logged-in rider (role RIDER)
+      description: "The id and the email come from the token, so the client id is\
+        \ the rider's userId."
+      operationId: create
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateClientRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ClientResponse"
+  /api/clients/{id}/vehicles:
+    get:
+      tags:
+      - Clients
+      summary: List a client's vehicles (the rider themself or an admin)
+      operationId: vehicles
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VehicleResponse"
+    post:
+      tags:
+      - Clients
+      summary: Register a vehicle for a client (a motorcycle requires a plate; the
+        rider themself)
+      operationId: addVehicle
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateVehicleRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/VehicleResponse"
+  /api/assistances:
+    get:
+      tags:
+      - Assistances
+      summary: "List the assistances of the rider or the jobs of the mechanic of the\
+        \ token, newest first"
+      description: An admin passes exactly one of clientId or mechanicId.
+      operationId: list
+      parameters:
+      - name: clientId
+        in: query
+        required: false
+        schema:
+          type: string
+          format: uuid
+      - name: mechanicId
+        in: query
+        required: false
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AssistanceResponse"
+    post:
+      tags:
+      - Assistances
+      summary: Create an assistance request and offer it to nearby mechanics; a repeated
+        Idempotency-Key returns the existing request with 200 (role RIDER)
+      description: "The client is the rider of the token. The description is classified\
+        \ (AI with keyword fallback) to get the urgency. problemType and requiredSkill\
+        \ are optional: when missing, the classification fills them."
+      operationId: create_1
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        description: Unique per request; the app reuses it on every retry
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAssistanceRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/AssistanceResponse"
+  /api/assistances/{id}/start:
+    post:
+      tags:
+      - Assistances
+      summary: The assigned mechanic starts the work
+      operationId: start
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/AssistanceResponse"
+  /api/assistances/{id}/rating:
+    post:
+      tags:
+      - Assistances
+      summary: The rider rates the mechanic of a completed assistance (1 to 5); updates
+        the mechanic's average
+      operationId: rate
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RateAssistanceRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/AssistanceResponse"
+  /api/assistances/{id}/dispatch:
+    post:
+      tags:
+      - Assistances
+      summary: "Publish again an UNMATCHED assistance, or retry a dispatch that failed\
+        \ (its rider or an admin)"
+      operationId: retryDispatch
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/AssistanceResponse"
+  /api/assistances/{id}/complete:
+    post:
+      tags:
+      - Assistances
+      summary: The assigned mechanic marks the assistance as completed
+      operationId: complete
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/AssistanceResponse"
+  /api/assistances/{id}/cancel:
+    post:
+      tags:
+      - Assistances
+      summary: Cancel an open assistance; cancelling twice is not an error (its rider
+        or an admin)
+      operationId: cancel
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/AssistanceResponse"
+  /api/assistances/{id}/assign:
+    post:
+      tags:
+      - Assistances
+      summary: Called by dispatch-service when a mechanic accepts the offer (role
+        SERVICE)
+      operationId: assign
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssignMechanicRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/AssistanceResponse"
+  /api/assistances/cancel-by-key:
+    post:
+      tags:
+      - Assistances
+      summary: "Cancel the assistance created with this Idempotency-Key, for a request\
+        \ the phone does not know whether it arrived; 404 if it never did (role RIDER)"
+      operationId: cancelByKey
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+      - name: clientId
+        in: query
+        required: false
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/AssistanceResponse"
+  /api/clients/{id}:
+    get:
+      tags:
+      - Clients
+      summary: Get a client (the rider themself or an admin)
+      operationId: find
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ClientResponse"
+  /api/assistances/{id}:
+    get:
+      tags:
+      - Assistances
+      summary: "Get the current assistance state (its rider, its mechanic or an admin)"
+      operationId: find_1
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/AssistanceResponse"
+  /api/assistances/{id}/history:
+    get:
+      tags:
+      - Assistances
+      summary: "Get the status history of an assistance (its rider, its mechanic or\
+        \ an admin)"
+      operationId: history
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StatusChangeResponse"
+components:
+  schemas:
+    TriageRequest:
+      type: object
+      properties:
+        description:
+          type: string
+          maxLength: 1000
+          minLength: 0
+        vehicleType:
+          type: string
+          enum:
+          - BICYCLE
+          - E_BIKE
+          - MOTORCYCLE
+      required:
+      - description
+    TriageResponse:
+      type: object
+      properties:
+        category:
+          type: string
+        problemType:
+          type: string
+        requiredSkill:
+          type: string
+        urgency:
+          type: string
+          enum:
+          - LOW
+          - MEDIUM
+          - HIGH
+        confidence:
+          type: number
+          format: double
+        source:
+          type: string
+          enum:
+          - AI
+          - KEYWORDS
+    CreateClientRequest:
+      type: object
+      properties:
+        fullName:
+          type: string
+          maxLength: 120
+          minLength: 0
+        phone:
+          type: string
+          maxLength: 30
+          minLength: 0
+      required:
+      - fullName
+      - phone
+    ClientResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        fullName:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    CreateVehicleRequest:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - BICYCLE
+          - E_BIKE
+          - MOTORCYCLE
+        brand:
+          type: string
+          maxLength: 60
+          minLength: 0
+        model:
+          type: string
+          maxLength: 60
+          minLength: 0
+        color:
+          type: string
+          maxLength: 30
+          minLength: 0
+        plate:
+          type: string
+          maxLength: 10
+          minLength: 0
+      required:
+      - brand
+      - model
+      - type
+    VehicleResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        clientId:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum:
+          - BICYCLE
+          - E_BIKE
+          - MOTORCYCLE
+        brand:
+          type: string
+        model:
+          type: string
+        color:
+          type: string
+        plate:
+          type: string
+    CreateAssistanceRequest:
+      type: object
+      properties:
+        clientId:
+          type: string
+          format: uuid
+        vehicleId:
+          type: string
+          format: uuid
+        description:
+          type: string
+          maxLength: 1000
+          minLength: 0
+        problemType:
+          type: string
+          maxLength: 80
+          minLength: 0
+        requiredSkill:
+          type: string
+          maxLength: 80
+          minLength: 0
+        latitude:
+          type: number
+          format: double
+          maximum: 90.0
+          minimum: -90.0
+        longitude:
+          type: number
+          format: double
+          maximum: 180.0
+          minimum: -180.0
+        clientCreatedAt:
+          type: string
+          format: date-time
+        mechanicKind:
+          type: string
+          pattern: MOBILE|WORKSHOP
+      required:
+      - description
+      - vehicleId
+    AssistanceResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        clientId:
+          type: string
+          format: uuid
+        vehicleId:
+          type: string
+          format: uuid
+        vehicleType:
+          type: string
+          enum:
+          - BICYCLE
+          - E_BIKE
+          - MOTORCYCLE
+        description:
+          type: string
+        problemType:
+          type: string
+        requiredSkill:
+          type: string
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+        status:
+          type: string
+          enum:
+          - REQUESTED
+          - UNMATCHED
+          - MATCHED
+          - IN_PROGRESS
+          - COMPLETED
+          - CANCELLED
+        assignedMechanicId:
+          type: string
+          format: uuid
+        preferredMechanicKind:
+          type: string
+        assignedEtaMinutes:
+          type: integer
+          format: int32
+        assignedDistanceKm:
+          type: number
+          format: double
+        rating:
+          type: integer
+          format: int32
+        ratingComment:
+          type: string
+        offersExpireAt:
+          type: string
+          format: date-time
+        idempotencyKey:
+          type: string
+        clientCreatedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        urgency:
+          type: string
+          enum:
+          - LOW
+          - MEDIUM
+          - HIGH
+        triageSource:
+          type: string
+          enum:
+          - AI
+          - KEYWORDS
+        triageConfidence:
+          type: number
+          format: double
+    RateAssistanceRequest:
+      type: object
+      properties:
+        score:
+          type: integer
+          format: int32
+          maximum: 5
+          minimum: 1
+        comment:
+          type: string
+          maxLength: 500
+          minLength: 0
+      required:
+      - score
+    AssignMechanicRequest:
+      type: object
+      properties:
+        mechanicId:
+          type: string
+          format: uuid
+      required:
+      - mechanicId
+    StatusChangeResponse:
+      type: object
+      properties:
+        fromStatus:
+          type: string
+          enum:
+          - REQUESTED
+          - UNMATCHED
+          - MATCHED
+          - IN_PROGRESS
+          - COMPLETED
+          - CANCELLED
+        toStatus:
+          type: string
+          enum:
+          - REQUESTED
+          - UNMATCHED
+          - MATCHED
+          - IN_PROGRESS
+          - COMPLETED
+          - CANCELLED
+        changedAt:
+          type: string
+          format: date-time
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

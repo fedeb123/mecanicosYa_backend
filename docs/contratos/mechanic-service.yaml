@@ -1,0 +1,427 @@
+openapi: 3.1.0
+info:
+  title: MecanicosYa · mechanic-service
+  description: "Perfiles de mecánicos, habilidades, tipos de vehículo, disponibilidad\
+    \ y ubicación, aprobación por un admin y calificaciones. Publica mechanic.events\
+    \ y consume assistance.events."
+  version: "2.0"
+servers:
+- url: http://localhost:8081
+  description: Generated server url
+security:
+- bearerAuth: []
+paths:
+  /api/mechanics:
+    get:
+      tags:
+      - Mechanics
+      summary: "List mechanics, optionally by verification status (role ADMIN)"
+      operationId: list
+      parameters:
+      - name: verificationStatus
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - PENDING_VERIFICATION
+          - APPROVED
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MechanicResponse"
+    post:
+      tags:
+      - Mechanics
+      summary: Create the profile of the logged-in mechanic (vehicleTypes defaults
+        to BICYCLE)
+      description: Role MECHANIC. The id and the email come from the token. The profile
+        starts PENDING_VERIFICATION until an admin approves it.
+      operationId: register
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMechanicRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/MechanicResponse"
+  /api/mechanics/{id}/ratings:
+    post:
+      tags:
+      - Mechanics
+      summary: "Add the rating of a completed assistance to the mechanic's average\
+        \ (idempotent per assistance; role SERVICE or ADMIN, the ratings normally\
+        \ arrive by Kafka)"
+      operationId: rate
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RatingRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/MechanicResponse"
+  /api/mechanics/{id}/approve:
+    post:
+      tags:
+      - Mechanics
+      summary: Approve a pending mechanic so they can go available and take offers
+        (role ADMIN)
+      description: The mechanic's next token (login or refresh) says APPROVED.
+      operationId: approve
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/MechanicResponse"
+  /api/mechanics/{id}/availability:
+    patch:
+      tags:
+      - Mechanics
+      summary: Update availability and current location (the mechanic themself)
+      description: 403 while the mechanic is pending verification.
+      operationId: updateAvailability
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AvailabilityRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/MechanicResponse"
+  /api/mechanics/{id}:
+    get:
+      tags:
+      - Mechanics
+      summary: Get a mechanic
+      operationId: find
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/MechanicResponse"
+  /api/mechanics/nearby:
+    get:
+      tags:
+      - Mechanics
+      summary: "Available, approved mechanics near a point, closest first (role RIDER\
+        \ or ADMIN)"
+      description: "Straight-line distance, radius 3 km by default (max 20). Only\
+        \ what the map needs: no email."
+      operationId: nearby
+      parameters:
+      - name: latitude
+        in: query
+        required: true
+        schema:
+          type: number
+          format: double
+          maximum: 90.0
+          minimum: -90.0
+      - name: longitude
+        in: query
+        required: true
+        schema:
+          type: number
+          format: double
+          maximum: 180.0
+          minimum: -180.0
+      - name: radiusKm
+        in: query
+        required: false
+        schema:
+          type: number
+          format: double
+          default: 3.0
+          maximum: 20.0
+          minimum: 0.1
+      - name: vehicleType
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - BICYCLE
+          - E_BIKE
+          - MOTORCYCLE
+      - name: kind
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - MOBILE
+          - WORKSHOP
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/NearbyMechanicResponse"
+  /api/mechanics/candidates:
+    get:
+      tags:
+      - Mechanics
+      summary: "Find available, approved mechanics with a required skill, optionally\
+        \ for a vehicle type (role SERVICE or ADMIN)"
+      operationId: findCandidates
+      parameters:
+      - name: skill
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: vehicleType
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - BICYCLE
+          - E_BIKE
+          - MOTORCYCLE
+      - name: kind
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - MOBILE
+          - WORKSHOP
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MechanicResponse"
+components:
+  schemas:
+    CreateMechanicRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        phone:
+          type: string
+          maxLength: 40
+          minLength: 0
+        latitude:
+          type: number
+          format: double
+          maximum: 90.0
+          minimum: -90.0
+        longitude:
+          type: number
+          format: double
+          maximum: 180.0
+          minimum: -180.0
+        skills:
+          type: array
+          items:
+            type: string
+            minLength: 1
+          minItems: 1
+          uniqueItems: true
+        vehicleTypes:
+          type: array
+          items:
+            type: string
+            enum:
+            - BICYCLE
+            - E_BIKE
+            - MOTORCYCLE
+          uniqueItems: true
+        kind:
+          type: string
+          enum:
+          - MOBILE
+          - WORKSHOP
+        address:
+          type: string
+          maxLength: 200
+          minLength: 0
+        workshopComplete:
+          type: boolean
+      required:
+      - name
+      - skills
+    MechanicResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        kind:
+          type: string
+          enum:
+          - MOBILE
+          - WORKSHOP
+        address:
+          type: string
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+        available:
+          type: boolean
+        rating:
+          type: number
+          format: double
+        ratingCount:
+          type: integer
+          format: int32
+        skills:
+          type: array
+          items:
+            type: string
+          uniqueItems: true
+        vehicleTypes:
+          type: array
+          items:
+            type: string
+            enum:
+            - BICYCLE
+            - E_BIKE
+            - MOTORCYCLE
+          uniqueItems: true
+        verificationStatus:
+          type: string
+          enum:
+          - PENDING_VERIFICATION
+          - APPROVED
+    RatingRequest:
+      type: object
+      properties:
+        assistanceId:
+          type: string
+          format: uuid
+        score:
+          type: integer
+          format: int32
+          maximum: 5
+          minimum: 1
+      required:
+      - assistanceId
+      - score
+    AvailabilityRequest:
+      type: object
+      properties:
+        available:
+          type: boolean
+        latitude:
+          type: number
+          format: double
+          maximum: 90.0
+          minimum: -90.0
+        longitude:
+          type: number
+          format: double
+          maximum: 180.0
+          minimum: -180.0
+    NearbyMechanicResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        kind:
+          type: string
+          enum:
+          - MOBILE
+          - WORKSHOP
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+        distanceKm:
+          type: number
+          format: double
+        rating:
+          type: number
+          format: double
+        vehicleTypes:
+          type: array
+          items:
+            type: string
+            enum:
+            - BICYCLE
+            - E_BIKE
+            - MOTORCYCLE
+          uniqueItems: true
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
