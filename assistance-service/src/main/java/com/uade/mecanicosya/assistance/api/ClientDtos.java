@@ -3,7 +3,6 @@ package com.uade.mecanicosya.assistance.api;
 import com.uade.mecanicosya.assistance.domain.Client;
 import com.uade.mecanicosya.assistance.domain.Vehicle;
 import com.uade.mecanicosya.assistance.domain.VehicleType;
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -16,10 +15,10 @@ public final class ClientDtos {
     private ClientDtos() {
     }
 
+    /** El id y el email salen del token del repartidor. */
     public record CreateClientRequest(
             @NotBlank @Size(max = 120) String fullName,
-            @NotBlank @Size(max = 30) String phone,
-            @NotBlank @Email @Size(max = 120) String email
+            @NotBlank @Size(max = 30) String phone
     ) {
     }
 

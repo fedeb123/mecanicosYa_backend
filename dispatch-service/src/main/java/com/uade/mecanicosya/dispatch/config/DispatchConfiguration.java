@@ -5,12 +5,17 @@ import com.uade.mecanicosya.dispatch.domain.ResilientTravelTimeEstimator;
 import com.uade.mecanicosya.dispatch.domain.StraightLineTravelTimeEstimator;
 import com.uade.mecanicosya.dispatch.domain.TravelTimeEstimator;
 import com.uade.mecanicosya.dispatch.infrastructure.OpenRouteServiceClient;
+import com.uade.mecanicosya.shared.security.ApiSecurity;
+import com.uade.mecanicosya.shared.security.Role;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.client.RestClient;
 
 import java.time.Clock;
@@ -26,6 +31,23 @@ public class DispatchConfiguration {
     @Bean
     Clock clock() {
         return Clock.systemUTC();
+    }
+
+    /**
+     * Qué rol puede llamar a cada endpoint. Que el mecánico esté aprobado y actúe por sí mismo lo valida el
+     * controlador con el token.
+     */
+    @Bean
+    SecurityFilterChain securityFilterChain(HttpSecurity http, ApiSecurity apiSecurity) throws Exception {
+        String service = Role.SERVICE.name();
+        String admin = Role.ADMIN.name();
+        return apiSecurity.filterChain(http, authorize -> authorize
+                .requestMatchers(HttpMethod.GET, "/api/dispatches/offers").hasAnyRole(Role.MECHANIC.name(), admin)
+                .requestMatchers(HttpMethod.POST, "/api/dispatches/*/accept", "/api/dispatches/*/decline")
+                .hasAnyRole(Role.MECHANIC.name(), admin)
+                .requestMatchers(HttpMethod.POST, "/api/dispatches", "/api/dispatches/*/cancel")
+                .hasAnyRole(service, admin)
+                .requestMatchers(HttpMethod.GET, "/api/dispatches/*").hasAnyRole(service, admin));
     }
 
     @Bean

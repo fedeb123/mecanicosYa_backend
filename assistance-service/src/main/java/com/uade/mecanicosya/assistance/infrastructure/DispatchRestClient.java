@@ -6,6 +6,7 @@ import com.uade.mecanicosya.assistance.application.DispatchPort;
 import com.uade.mecanicosya.assistance.application.DispatchOutcome;
 import com.uade.mecanicosya.assistance.application.DispatchUnavailableException;
 import com.uade.mecanicosya.shared.observability.CorrelationIdPropagator;
+import com.uade.mecanicosya.shared.security.ServiceTokenInterceptor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
@@ -29,7 +30,8 @@ public class DispatchRestClient implements DispatchPort {
     public DispatchRestClient(
             RestClient.Builder builder,
             @Value("${clients.dispatch-service.base-url}") String baseUrl,
-            @Value("${clients.dispatch-service.timeout:5s}") Duration timeout
+            @Value("${clients.dispatch-service.timeout:5s}") Duration timeout,
+            ServiceTokenInterceptor serviceToken
     ) {
         HttpClient httpClient = HttpClient.newBuilder()
                 .version(HttpClient.Version.HTTP_1_1)
@@ -41,6 +43,7 @@ public class DispatchRestClient implements DispatchPort {
                 .baseUrl(baseUrl)
                 .requestFactory(requestFactory)
                 .requestInterceptor(new CorrelationIdPropagator())
+                .requestInterceptor(serviceToken)
                 .build();
     }
 

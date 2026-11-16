@@ -7,6 +7,7 @@ import com.uade.mecanicosya.assistance.application.DispatchUnavailableException;
 import com.uade.mecanicosya.assistance.domain.VehicleType;
 import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.AfterEach;
+import com.uade.mecanicosya.shared.security.ServiceTokenInterceptor;
 import org.junit.jupiter.api.Test;
 import org.slf4j.MDC;
 import org.springframework.web.client.RestClient;
@@ -138,7 +139,7 @@ class DispatchRestClientTest {
     }
 
     private DispatchRestClient client(String baseUrl, Duration timeout) {
-        return new DispatchRestClient(RestClient.builder(), baseUrl, timeout);
+        return new DispatchRestClient(RestClient.builder(), baseUrl, timeout, ServiceTokenInterceptor.disabled());
     }
 
     private void startServer(int status, String body, Duration delay) throws IOException {

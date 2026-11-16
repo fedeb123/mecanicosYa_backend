@@ -23,6 +23,21 @@ spring:
     consumer:
       group-id: ${spring.application.name}
       auto-offset-reset: earliest
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # La clave pública de identity-service, que firma los tokens.
+          jwk-set-uri: ${IDENTITY_JWKS_URI:http://localhost:8084/.well-known/jwks.json}
+
+mecanicosya:
+  security:
+    identity-url: ${IDENTITY_SERVICE_URL:http://localhost:8084}
+    # Con secreto, las llamadas a mechanic-service y assistance-service llevan un token de servicio. Lo comparte
+    # con identity-service.
+    service-client:
+      secret: ${SERVICE_CLIENT_SECRET:}
+
 clients:
   mechanic-service:
     base-url: ${MECHANIC_SERVICE_URL:http://localhost:8081}

@@ -78,7 +78,7 @@ class AssistanceKafkaIntegrationTest {
 
     @BeforeEach
     void aRiderWithABike() {
-        client = clientFacade.register("Rider", "+54 11 5555-0000", UUID.randomUUID() + "@example.com");
+        client = clientFacade.register(UUID.randomUUID(), "Rider", "+54 11 5555-0000", UUID.randomUUID() + "@example.com");
         vehicle = clientFacade.registerVehicle(client.getId(), VehicleType.BICYCLE, "Trek", "FX 2", null, null);
     }
 

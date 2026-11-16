@@ -4,6 +4,7 @@ import com.uade.mecanicosya.dispatch.application.MechanicDirectoryUnavailableExc
 import com.uade.mecanicosya.dispatch.domain.MechanicCandidate;
 import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.AfterEach;
+import com.uade.mecanicosya.shared.security.ServiceTokenInterceptor;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.client.RestClient;
 
@@ -76,7 +77,7 @@ class MechanicRestClientTest {
     }
 
     private MechanicRestClient client(String baseUrl, Duration timeout) {
-        return new MechanicRestClient(RestClient.builder(), baseUrl, timeout);
+        return new MechanicRestClient(RestClient.builder(), baseUrl, timeout, ServiceTokenInterceptor.disabled());
     }
 
     private void startServer(int status, String body, AtomicReference<String> query) throws IOException {
