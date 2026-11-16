@@ -138,15 +138,20 @@
           <label>Vehículo <select name="vehicleId" class="select-vehicle" required></select></label>
           <label>Descripción <textarea name="description" required rows="2">Se cortó la cadena en el centro</textarea></label>
           <div class="row">
-            <label>Tipo de problema <input name="problemType" required value="CHAIN"></label>
-            <label>Habilidad requerida <input name="requiredSkill" required value="CHAIN_REPAIR"></label>
+            <label>Tipo de problema <input name="problemType" placeholder="vacío: lo completa la clasificación"></label>
+            <label>Habilidad requerida <input name="requiredSkill" placeholder="vacío: lo completa la clasificación"></label>
           </div>
+          <p class="hint" id="triage-hint">El texto se clasifica al crear el pedido (IA con respaldo por palabras clave).
+            Con «Clasificar» ves el resultado antes de enviarlo.</p>
           <div class="row">
             <label>Ubicación <select class="location-preset" data-lat="latitude" data-lon="longitude"></select></label>
             <label>Latitud <input name="latitude" type="number" step="any" required value="-34.6037"></label>
             <label>Longitud <input name="longitude" type="number" step="any" required value="-58.3816"></label>
           </div>
-          <button type="submit">Pedir asistencia</button>
+          <div class="actions">
+            <button type="submit">Pedir asistencia</button>
+            <button type="button" class="ghost" id="btn-triage">Clasificar</button>
+          </div>
         </form>
       </div>
 
@@ -181,7 +186,8 @@
       <div class="card wide">
         <h2>Demo rápida</h2>
         <p>Hace el mismo recorrido que <code>scripts/demo.sh</code>: registra tres mecánicos y los pone disponibles,
-          registra un cliente con su bicicleta y pide una asistencia de cadena. El pedido viaja por Kafka a
+          registra un cliente con su bicicleta y pide una asistencia escribiendo sólo el problema: la clasificación
+          deduce que es de cadena y qué tan urgente es. El pedido viaja por Kafka a
           dispatch-service, que se lo ofrece a los dos que arreglan bicicletas; los dos aceptan al mismo tiempo y uno solo se lo queda; el otro recibe 409. Al final
           los tres se desconectan para no recibir los pedidos de la próxima corrida.
           Todo va con el mismo <code>X-Correlation-Id</code> para seguirlo en los logs.</p>

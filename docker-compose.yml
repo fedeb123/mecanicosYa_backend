@@ -122,6 +122,9 @@ services:
       DB_PASSWORD: assistances_pass
       SPRING_DATASOURCE_HIKARI_INITIALIZATION_FAIL_TIMEOUT: 60000
       DISPATCH_SERVICE_URL: http://dispatch-service:8083
+      # Se toman de la terminal que corre docker compose; sin clave se clasifica con palabras clave.
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      TRIAGE_MODEL: ${TRIAGE_MODEL:-claude-opus-5-5}
     ports:
       - "8082:8082"
     depends_on:

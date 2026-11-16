@@ -153,3 +153,5 @@ pre { background: var(--code-bg); color: var(--code-text); padding: 8px; border-
 .ghost-link:hover {
   text-decoration: underline;
 }
+
+.hint { margin: 4px 0 10px; font-size: 13px; color: var(--muted); }
