@@ -19,7 +19,7 @@ public interface DispatchOfferRepository extends JpaRepository<DispatchOffer, UU
     @Query("""
             select new com.uade.mecanicosya.dispatch.domain.OpenOffer(
                    d.assistanceId, o.mechanicId, d.requiredSkill, d.vehicleType, d.latitude, d.longitude,
-                   o.distanceKm, o.ranking, d.offersExpireAt)
+                   o.distanceKm, o.etaMinutes, o.etaSource, o.ranking, d.offersExpireAt)
               from DispatchOffer o, DispatchMatch d
              where d.assistanceId = o.assistanceId
                and d.round = o.round

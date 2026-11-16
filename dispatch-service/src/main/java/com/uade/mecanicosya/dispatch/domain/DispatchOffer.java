@@ -49,6 +49,13 @@ public class DispatchOffer {
 
     private Instant respondedAt;
 
+    /** Minutos que tarda el mecánico en llegar al pedido. */
+    private Integer etaMinutes;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 10)
+    private EtaSource etaSource;
+
     protected DispatchOffer() {
     }
 
@@ -60,6 +67,21 @@ public class DispatchOffer {
             int ranking,
             Instant createdAt
     ) {
+        this(assistanceId, round, mechanicId, distanceKm, ranking, createdAt, null, null);
+    }
+
+    public DispatchOffer(
+            UUID assistanceId,
+            int round,
+            UUID mechanicId,
+            double distanceKm,
+            int ranking,
+            Instant createdAt,
+            Integer etaMinutes,
+            EtaSource etaSource
+    ) {
+        this.etaMinutes = etaMinutes;
+        this.etaSource = etaSource;
         this.id = UUID.randomUUID();
         this.assistanceId = assistanceId;
         this.round = round;
@@ -119,5 +141,13 @@ public class DispatchOffer {
 
     public Instant getRespondedAt() {
         return respondedAt;
+    }
+
+    public Integer getEtaMinutes() {
+        return etaMinutes;
+    }
+
+    public EtaSource getEtaSource() {
+        return etaSource;
     }
 }

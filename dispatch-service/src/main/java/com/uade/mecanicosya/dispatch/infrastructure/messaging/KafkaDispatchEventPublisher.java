@@ -41,7 +41,8 @@ public class KafkaDispatchEventPublisher implements DispatchEventPublisher {
                 dispatch.getAssistanceId(),
                 dispatch.getRound(),
                 dispatch.getMechanicId(),
-                dispatch.getDistanceKm()
+                dispatch.getDistanceKm(),
+                dispatch.getEtaMinutes()
         ));
     }
 

@@ -1,5 +1,6 @@
 package com.uade.mecanicosya.assistance.application;
 
+import com.uade.mecanicosya.assistance.application.triage.Triage;
 import com.uade.mecanicosya.assistance.domain.AssistanceFactory;
 import com.uade.mecanicosya.assistance.domain.AssistanceRepository;
 import com.uade.mecanicosya.assistance.domain.AssistanceRequest;
@@ -56,7 +57,8 @@ public class AssistanceFacade {
     }
 
     /**
-     * Crea el pedido. Si ya existe uno del mismo cliente con la misma {@code idempotencyKey}, lo devuelve sin crear
+     * Crea el pedido con la clasificación que ya hizo {@link AssistanceIntake} ({@code triage} puede ser
+     * {@code null}). Si ya existe uno del mismo cliente con la misma {@code idempotencyKey}, lo devuelve sin crear
      * otro: así un reintento de la app (por ejemplo, al recuperar la conexión) no duplica el pedido.
      */
     @Transactional
@@ -69,7 +71,8 @@ public class AssistanceFacade {
             double latitude,
             double longitude,
             String idempotencyKey,
-            Instant clientCreatedAt
+            Instant clientCreatedAt,
+            Triage triage
     ) {
         if (idempotencyKey == null || idempotencyKey.isBlank() || idempotencyKey.length() > MAX_KEY_LENGTH) {
             throw new IllegalArgumentException("The idempotency key must have between 1 and " + MAX_KEY_LENGTH + " characters");
@@ -92,6 +95,9 @@ public class AssistanceFacade {
                 idempotencyKey,
                 clientCreatedAt
         );
+        if (triage != null) {
+            assistance.recordTriage(triage.urgency(), triage.source(), triage.confidence());
+        }
         // saveAndFlush: si otro reintento con la misma clave ganó la carrera, la restricción única salta acá.
         AssistanceRequest saved = repository.saveAndFlush(assistance);
         applicationEventPublisher.publishEvent(

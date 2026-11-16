@@ -80,9 +80,17 @@ vehicle_id=$(printf '%s' "$vehicle" | json_field id)
 # La app genera una clave por pedido y la repite en cada reintento.
 idempotency_key="demo-${run_id}"
 created_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-assistance_body="{\"clientId\":\"${client_id}\",\"vehicleId\":\"${vehicle_id}\",\"description\":\"Se cortó la cadena en Palermo\",\"problemType\":\"CHAIN\",\"requiredSkill\":\"CHAIN_REPAIR\",\"latitude\":-34.5795,\"longitude\":-58.4250,\"clientCreatedAt\":\"${created_at}\"}"
+# El repartidor sólo describe el problema: la clasificación completa problemType, requiredSkill y la urgencia.
+assistance_body="{\"clientId\":\"${client_id}\",\"vehicleId\":\"${vehicle_id}\",\"description\":\"Se cortó la cadena en Palermo\",\"latitude\":-34.5795,\"longitude\":-58.4250,\"clientCreatedAt\":\"${created_at}\"}"
 
-echo "1. Pedido de asistencia (Idempotency-Key ${idempotency_key}):"
+echo "0. Clasificación del texto (IA si hay ANTHROPIC_API_KEY, si no palabras clave):"
+curl -fsS -X POST http://localhost:8082/api/triage \
+  -H 'Content-Type: application/json' \
+  -d '{"description":"Se cortó la cadena en Palermo","vehicleType":"BICYCLE"}'
+echo
+echo
+
+echo "1. Pedido de asistencia sin tipo de problema (Idempotency-Key ${idempotency_key}):"
 assistance=$(curl -fsS -X POST http://localhost:8082/api/assistances \
   -H 'Content-Type: application/json' \
   -H 'X-Correlation-Id: demo-mecanicosya' \

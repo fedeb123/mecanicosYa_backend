@@ -1,0 +1,4 @@
+# Los tests nunca llaman a la API real de Claude, aunque ANTHROPIC_API_KEY esté definida en la terminal.
+triage:
+  anthropic:
+    api-key: ""

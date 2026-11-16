@@ -218,6 +218,45 @@ class AssistanceRequestFlowTest {
         assertThat(neverArrived.statusCode()).isEqualTo(404);
     }
 
+    @Test
+    void withoutProblemTypeTheClassificationFillsItAndTheUrgency() throws Exception {
+        HttpResponse<String> response = send(HttpRequest.newBuilder(uri("/api/assistances"))
+                .header("Content-Type", "application/json")
+                .header("Idempotency-Key", "key-triage")
+                .POST(HttpRequest.BodyPublishers.ofString("""
+                        {"clientId":"%s","vehicleId":"%s","description":"Me quedé sin frenos bajando el puente",
+                         "latitude":-34.6037,"longitude":-58.3816}
+                        """.formatted(client.getId(), vehicle.getId()))));
+
+        assertThat(response.statusCode()).isEqualTo(201);
+        assertThat(response.body()).contains(
+                "\"problemType\":\"BRAKES\"",
+                "\"requiredSkill\":\"BRAKE_REPAIR\"",
+                "\"urgency\":\"HIGH\"",
+                "\"triageSource\":\"KEYWORDS\""
+        );
+    }
+
+    @Test
+    void theRiderChoiceWinsOverTheClassification() throws Exception {
+        HttpResponse<String> response = create("key-rider-choice", null);
+
+        assertThat(response.body()).contains("\"problemType\":\"CHAIN\"", "\"urgency\":\"MEDIUM\"");
+    }
+
+    @Test
+    void theTriageEndpointClassifiesWithoutCreatingARequest() throws Exception {
+        HttpResponse<String> response = send(HttpRequest.newBuilder(uri("/api/triage"))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(
+                        "{\"description\":\"pinché la rueda de atrás\",\"vehicleType\":\"BICYCLE\"}")));
+
+        assertThat(response.statusCode()).isEqualTo(200);
+        assertThat(response.body()).contains("\"problemType\":\"TIRE\"", "\"requiredSkill\":\"TIRE_REPAIR\"",
+                "\"source\":\"KEYWORDS\"");
+        assertThat(repository.findByClient_IdOrderByCreatedAtDesc(client.getId())).isEmpty();
+    }
+
     private HttpResponse<String> create(String key, Instant clientCreatedAt) throws IOException, InterruptedException {
         return send(HttpRequest.newBuilder(uri("/api/assistances"))
                 .header("Content-Type", "application/json")

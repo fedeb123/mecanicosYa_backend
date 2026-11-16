@@ -35,7 +35,8 @@ public final class DispatchEvents {
             UUID assistanceId,
             int round,
             UUID mechanicId,
-            Double distanceKm
+            Double distanceKm,
+            Integer etaMinutes
     ) implements IntegrationEvent {
     }
 

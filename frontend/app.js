@@ -136,10 +136,10 @@ function renderAssistance(assistance, dispatch, history) {
     const d = dispatch.data;
     const offers = (d.offers || []).map(o => {
       const m = store.mechanics.find(x => x.id === o.mechanicId);
-      return `<div>${o.ranking}. ${m ? escapeHtml(m.name) : `<span class="mono">${escapeHtml(o.mechanicId)}</span>`} a ${o.distanceKm.toFixed(2)} km ${statusBadge(o.status)}</div>`;
+      return `<div>${o.ranking}. ${m ? escapeHtml(m.name) : `<span class="mono">${escapeHtml(o.mechanicId)}</span>`} a ${o.distanceKm.toFixed(2)} km${eta(o)} ${statusBadge(o.status)}</div>`;
     }).join('');
     const until = d.status === 'OFFERED' && d.offersExpireAt ? ` · se puede aceptar hasta ${formatDate(d.offersExpireAt)}` : '';
-    dispatchHtml = `${statusBadge(d.status)} ronda ${d.round}${until}${d.distanceKm != null ? ` · a ${d.distanceKm.toFixed(2)} km` : ''}${offers}`;
+    dispatchHtml = `${statusBadge(d.status)} ronda ${d.round}${until}${d.distanceKm != null ? ` · a ${d.distanceKm.toFixed(2)} km` : ''}${d.etaMinutes != null ? `, llega en ${d.etaMinutes} min` : ''}${offers}`;
   } else if (dispatch.status === 404) {
     dispatchHtml = 'Todavía no hay despacho registrado.';
   } else {
@@ -156,6 +156,7 @@ function renderAssistance(assistance, dispatch, history) {
       <tr><th>Id</th><td class="mono">${escapeHtml(assistance.id)}</td></tr>
       <tr><th>Descripción</th><td>${escapeHtml(assistance.description)}</td></tr>
       <tr><th>Problema / habilidad</th><td>${escapeHtml(assistance.problemType)} / ${escapeHtml(assistance.requiredSkill)}</td></tr>
+      <tr><th>Urgencia</th><td>${triageSummary(assistance)}</td></tr>
       <tr><th>Vehículo</th><td>${escapeHtml(VEHICLE_LABELS[assistance.vehicleType] || assistance.vehicleType)}</td></tr>
       <tr><th>Ubicación</th><td>${assistance.latitude}, ${assistance.longitude}</td></tr>
       <tr><th>Mecánico asignado</th><td>${assigned}</td></tr>
@@ -345,7 +346,7 @@ onSubmit('#form-vehicle', async form => {
   const result = await api('assistance', 'POST', `/api/clients/${f.clientId.value}/vehicles`, body);
   if (!result.ok) return showError(box, result);
   const v = result.data;
-  remember('vehicles', { id: v.id, clientId: v.clientId, label: `${VEHICLE_LABELS[v.type] || v.type} ${v.brand} ${v.model}` });
+  remember('vehicles', { id: v.id, clientId: v.clientId, type: v.type, label: `${VEHICLE_LABELS[v.type] || v.type} ${v.brand} ${v.model}` });
   showInfo(box, `Vehículo registrado: <span class="mono">${escapeHtml(v.id)}</span>`);
 });
 
@@ -355,7 +356,7 @@ $('#btn-list-vehicles').addEventListener('click', async event => {
   if (!clientId) return showInfo(box, 'Elegí un cliente.');
   const result = await withBusy(event.target, () => api('assistance', 'GET', `/api/clients/${clientId}/vehicles`));
   if (!result.ok) return showError(box, result);
-  result.data.forEach(v => remember('vehicles', { id: v.id, clientId: v.clientId, label: `${VEHICLE_LABELS[v.type] || v.type} ${v.brand} ${v.model}` }));
+  result.data.forEach(v => remember('vehicles', { id: v.id, clientId: v.clientId, type: v.type, label: `${VEHICLE_LABELS[v.type] || v.type} ${v.brand} ${v.model}` }));
   box.innerHTML = table(['Tipo', 'Marca / modelo', 'Color', 'Patente', 'Id'], result.data.map(v => [
     escapeHtml(VEHICLE_LABELS[v.type] || v.type),
     escapeHtml(`${v.brand} ${v.model}`),
@@ -386,6 +387,41 @@ async function showAssistance(id, box, correlationId) {
   box.innerHTML = renderAssistance(assistance.data, dispatch, history);
 }
 
+// Tiempo de llegada: "por calle" si salió de OpenRouteService, "estimado" si es en línea recta.
+function eta(o) {
+  if (o.etaMinutes == null) return '';
+  const source = o.etaSource === 'ROUTE' ? 'por calle' : o.etaSource === 'ESTIMATE' ? 'estimado' : '';
+  return ` · ${o.etaMinutes} min${source ? ` ${source}` : ''}`;
+}
+
+const URGENCY_LABELS = { LOW: 'baja', MEDIUM: 'media', HIGH: 'alta' };
+const TRIAGE_SOURCE_LABELS = { AI: 'IA', KEYWORDS: 'palabras clave' };
+
+function triageSummary(t) {
+  if (!t.urgency) return '—';
+  const source = TRIAGE_SOURCE_LABELS[t.triageSource || t.source] || '';
+  const confidence = t.triageConfidence ?? t.confidence;
+  return `${escapeHtml(URGENCY_LABELS[t.urgency] || t.urgency)} · ${escapeHtml(source)}`
+    + (confidence == null ? '' : ` · confianza ${Math.round(confidence * 100)}%`);
+}
+
+$('#btn-triage').addEventListener('click', async () => {
+  const form = $('#form-assistance');
+  const f = form.elements;
+  const box = ensureResultBox(form);
+  const vehicle = (store.vehicles || []).find(v => v.id === f.vehicleId.value);
+  const result = await api('assistance', 'POST', '/api/triage', {
+    description: f.description.value.trim(),
+    vehicleType: vehicle?.type || null,
+  });
+  if (!result.ok) return showError(box, result);
+  f.problemType.value = result.data.problemType;
+  f.requiredSkill.value = result.data.requiredSkill;
+  showInfo(box, `Clasificación: <span class="mono">${escapeHtml(result.data.problemType)}</span> /
+    <span class="mono">${escapeHtml(result.data.requiredSkill)}</span>, urgencia ${triageSummary(result.data)}.
+    Podés cambiar los campos antes de pedir la asistencia.`);
+});
+
 onSubmit('#form-assistance', async form => {
   const f = form.elements;
   const box = ensureResultBox(form);
@@ -395,8 +431,8 @@ onSubmit('#form-assistance', async form => {
     clientId: f.clientId.value,
     vehicleId: f.vehicleId.value,
     description: f.description.value.trim(),
-    problemType: f.problemType.value.trim(),
-    requiredSkill: f.requiredSkill.value.trim(),
+    problemType: f.problemType.value.trim() || null,
+    requiredSkill: f.requiredSkill.value.trim() || null,
     latitude: num(f.latitude.value),
     longitude: num(f.longitude.value),
     clientCreatedAt: new Date().toISOString(),
@@ -408,7 +444,7 @@ onSubmit('#form-assistance', async form => {
     return;
   }
   const id = result.data.id;
-  remember('assistances', { id, label: `${body.problemType} · ${body.description.slice(0, 30)}` });
+  remember('assistances', { id, label: `${result.data.problemType} · ${body.description.slice(0, 30)}` });
   $('#form-track [name=assistanceId]').value = id;
   const dispatched = await waitForOffers(id, correlationId);
   await showAssistance(id, $('#track-result'), correlationId);
@@ -461,10 +497,10 @@ async function showOffers(mechanicId, box) {
   const result = await api('dispatch', 'GET', `/api/dispatches/offers?mechanicId=${mechanicId}`);
   if (!result.ok) return showError(box, result);
   if (result.data.length === 0) return showInfo(box, 'Este mecánico no tiene ofertas abiertas.');
-  box.innerHTML = table(['Asistencia', 'Habilidad / vehículo', 'Distancia', 'Orden', 'Vence', ''], result.data.map(o => [
+  box.innerHTML = table(['Asistencia', 'Habilidad / vehículo', 'Distancia y llegada', 'Orden', 'Vence', ''], result.data.map(o => [
     `<span class="mono">${escapeHtml(o.assistanceId)}</span>`,
     `${escapeHtml(o.requiredSkill)} / ${escapeHtml(VEHICLE_LABELS[o.vehicleType] || o.vehicleType)}`,
-    `${o.distanceKm.toFixed(2)} km`,
+    `${o.distanceKm.toFixed(2)} km${eta(o)}`,
     String(o.ranking),
     formatDate(o.expiresAt),
     `<button type="button" data-offer="accept" data-id="${escapeHtml(o.assistanceId)}">Aceptar</button>
@@ -532,20 +568,21 @@ $('#btn-demo').addEventListener('click', event => withBusy(event.target, async (
   const vehicle = await api('assistance', 'POST', `/api/clients/${client.data.id}/vehicles`,
     { type: 'BICYCLE', brand: 'Trek', model: 'FX 2', color: 'Negra' }, cid);
   if (!vehicle.ok) return fail(vehicle);
-  remember('vehicles', { id: vehicle.data.id, clientId: client.data.id, label: 'Bicicleta Trek FX 2' });
+  remember('vehicles', { id: vehicle.data.id, clientId: client.data.id, type: 'BICYCLE', label: 'Bicicleta Trek FX 2' });
   step('✓ Registré al repartidor y su bicicleta');
 
   const key = newIdempotencyKey();
   const request = {
     clientId: client.data.id, vehicleId: vehicle.data.id, description: 'Se cortó la cadena en Palermo',
-    problemType: 'CHAIN', requiredSkill: 'CHAIN_REPAIR', latitude: -34.5795, longitude: -58.4250,
+    latitude: -34.5795, longitude: -58.4250,
     clientCreatedAt: new Date().toISOString(),
   };
   const assistance = await api('assistance', 'POST', '/api/assistances', request, cid, { 'Idempotency-Key': key });
   if (!assistance.ok) return fail(assistance);
   remember('assistances', { id: assistance.data.id, label: 'CHAIN · Se cortó la cadena en Palermo' });
   const retry = await api('assistance', 'POST', '/api/assistances', request, cid, { 'Idempotency-Key': key });
-  step(`✓ Pedí la asistencia (${statusBadge(assistance.data.status)}). Un reintento con la misma clave devolvió HTTP ${retry.status} y el mismo pedido.`);
+  step(`✓ Pedí la asistencia (${statusBadge(assistance.data.status)}) escribiendo sólo el problema. La clasificación lo marcó como <span class="mono">${escapeHtml(assistance.data.problemType)}</span> / <span class="mono">${escapeHtml(assistance.data.requiredSkill)}</span>, urgencia ${triageSummary(assistance.data)}.`);
+  step(`✓ Un reintento con la misma clave devolvió HTTP ${retry.status} y el mismo pedido.`);
   const offered = await waitForOffers(assistance.data.id, cid);
   if (!offered?.data?.offersExpireAt) return fail(offered || { status: 0, data: { detail: 'El despacho no respondió por Kafka' } });
   step('✓ dispatch-service recibió el pedido por Kafka y se lo ofreció a Ada y a Grace; la oferta volvió por Kafka a assistance-service.');

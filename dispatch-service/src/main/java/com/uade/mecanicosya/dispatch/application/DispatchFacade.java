@@ -11,6 +11,8 @@ import com.uade.mecanicosya.dispatch.domain.MechanicCandidate;
 import com.uade.mecanicosya.dispatch.domain.MechanicSelection;
 import com.uade.mecanicosya.dispatch.domain.OfferStatus;
 import com.uade.mecanicosya.dispatch.domain.OpenOffer;
+import com.uade.mecanicosya.dispatch.domain.RouteEstimate;
+import com.uade.mecanicosya.dispatch.domain.TravelTimeEstimator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -20,6 +22,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.IntStream;
 
 @Service
 public class DispatchFacade {
@@ -33,6 +36,7 @@ public class DispatchFacade {
     private final AssistanceAssignmentPort assignmentPort;
     private final DispatchEventPublisher eventPublisher;
     private final OfferPolicy offerPolicy;
+    private final TravelTimeEstimator travelTimeEstimator;
     private final Clock clock;
 
     public DispatchFacade(
@@ -43,6 +47,7 @@ public class DispatchFacade {
             AssistanceAssignmentPort assignmentPort,
             DispatchEventPublisher eventPublisher,
             OfferPolicy offerPolicy,
+            TravelTimeEstimator travelTimeEstimator,
             Clock clock
     ) {
         this.repository = repository;
@@ -52,6 +57,7 @@ public class DispatchFacade {
         this.assignmentPort = assignmentPort;
         this.eventPublisher = eventPublisher;
         this.offerPolicy = offerPolicy;
+        this.travelTimeEstimator = travelTimeEstimator;
         this.clock = clock;
     }
 
@@ -101,7 +107,7 @@ public class DispatchFacade {
         DispatchOffer offer = offerRepository.findByAssistanceIdAndRoundAndMechanicId(assistanceId, round, mechanicId)
                 .orElseThrow(() -> new OfferNotFoundException(assistanceId, mechanicId));
 
-        if (repository.claim(assistanceId, round, mechanicId, offer.getDistanceKm(), now) == 0) {
+        if (repository.claim(assistanceId, round, mechanicId, offer.getDistanceKm(), offer.getEtaMinutes(), now) == 0) {
             DispatchMatch current = find(assistanceId);
             if (current.isTakenBy(mechanicId)) {
                 return current;
@@ -211,8 +217,27 @@ public class DispatchFacade {
                 command.requiredSkill(),
                 command.vehicleType()
         );
-        return matchingStrategy.rank(command.latitude(), command.longitude(), candidates).stream()
+        List<MechanicSelection> ranked = matchingStrategy.rank(command.latitude(), command.longitude(), candidates)
+                .stream()
                 .limit(offerPolicy.maxOffers())
+                .toList();
+        return withEta(command, ranked);
+    }
+
+    /** Completa el tiempo de llegada de los que la estrategia ordenó sin calcularlo (nearest y best-rated). */
+    private List<MechanicSelection> withEta(DispatchCommand command, List<MechanicSelection> ranked) {
+        if (ranked.stream().allMatch(selection -> selection.etaMinutes() != null)) {
+            return ranked;
+        }
+        List<RouteEstimate> estimates = travelTimeEstimator.estimate(
+                command.latitude(),
+                command.longitude(),
+                ranked.stream().map(MechanicSelection::mechanic).toList()
+        );
+        return IntStream.range(0, ranked.size())
+                .mapToObj(index -> ranked.get(index).etaMinutes() != null
+                        ? ranked.get(index)
+                        : ranked.get(index).withEta(estimates.get(index)))
                 .toList();
     }
 
@@ -225,7 +250,9 @@ public class DispatchFacade {
                     selection.mechanic().id(),
                     selection.distanceKm(),
                     index + 1,
-                    now
+                    now,
+                    selection.etaMinutes(),
+                    selection.etaSource()
             ));
         }
         LOGGER.info(

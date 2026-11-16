@@ -55,3 +55,16 @@ springdoc:
 logging:
   pattern:
     level: "%5p [${spring.application.name:},%X{correlationId:-}]"
+
+triage:
+  anthropic:
+    # Sin clave, los pedidos se clasifican sólo con palabras clave. Nunca se pone la clave en el repo.
+    api-key: ${ANTHROPIC_API_KEY:}
+    base-url: ${TRIAGE_ANTHROPIC_BASE_URL:}
+    model: ${TRIAGE_MODEL:claude-opus-5-5}
+    effort: ${TRIAGE_EFFORT:low}
+    # Pasado este tiempo se usa el clasificador por palabras clave y el pedido sigue.
+    timeout: ${TRIAGE_TIMEOUT:PT10S}
+    max-retries: ${TRIAGE_MAX_RETRIES:1}
+    max-tokens: ${TRIAGE_MAX_TOKENS:2048}
+    refusal-fallback: ${TRIAGE_REFUSAL_FALLBACK:true}

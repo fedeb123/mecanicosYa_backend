@@ -95,7 +95,11 @@ services:
       SPRING_DATASOURCE_HIKARI_INITIALIZATION_FAIL_TIMEOUT: 60000
       MECHANIC_SERVICE_URL: http://mechanic-service:8081
       ASSISTANCE_SERVICE_URL: http://assistance-service:8082
-      DISPATCH_MATCHING_STRATEGY: nearest
+      # nearest, best-rated o fastest-eta (el que llega antes por calle)
+      DISPATCH_MATCHING_STRATEGY: ${DISPATCH_MATCHING_STRATEGY:-nearest}
+      # Se toma de la terminal que corre docker compose; sin clave el tiempo de llegada se estima en línea recta.
+      ORS_API_KEY: ${ORS_API_KEY:-}
+      ORS_PROFILE: ${ORS_PROFILE:-driving-car}
     ports:
       - "8083:8083"
     depends_on:
@@ -122,6 +126,9 @@ services:
       DB_PASSWORD: assistances_pass
       SPRING_DATASOURCE_HIKARI_INITIALIZATION_FAIL_TIMEOUT: 60000
       DISPATCH_SERVICE_URL: http://dispatch-service:8083
+      # Se toman de la terminal que corre docker compose; sin clave se clasifica con palabras clave.
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      TRIAGE_MODEL: ${TRIAGE_MODEL:-claude-opus-5-5}
     ports:
       - "8082:8082"
     depends_on:

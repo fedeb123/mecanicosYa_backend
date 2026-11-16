@@ -30,13 +30,27 @@ clients:
   assistance-service:
     base-url: ${ASSISTANCE_SERVICE_URL:http://localhost:8082}
     timeout: ${ASSISTANCE_SERVICE_TIMEOUT:3s}
+  openrouteservice:
+    # Sin clave, el tiempo de llegada se estima en línea recta. Nunca se pone la clave en el repo.
+    api-key: ${ORS_API_KEY:}
+    base-url: ${ORS_BASE_URL:https://api.openrouteservice.org}
+    # driving-car, cycling-regular, foot-walking...: cómo se mueve el mecánico
+    profile: ${ORS_PROFILE:driving-car}
+    timeout: ${ORS_TIMEOUT:3s}
 
 dispatch:
   matching:
     # nearest: el más cercano, con un ajuste leve por calificación
     # best-rated: el mejor calificado dentro de max-distance-km
+    # fastest-eta: el que llega antes por calle (OpenRouteService), dentro de max-distance-km
     strategy: ${DISPATCH_MATCHING_STRATEGY:nearest}
     max-distance-km: ${DISPATCH_MAX_DISTANCE_KM:5}
+    # fastest-eta sólo pide la ruta de los más cercanos en línea recta
+    max-route-candidates: ${DISPATCH_MAX_ROUTE_CANDIDATES:10}
+  eta:
+    # Respaldo sin OpenRouteService: línea recta por el factor de desvío, a esta velocidad
+    average-speed-kmh: ${DISPATCH_ETA_SPEED_KMH:20}
+    detour-factor: ${DISPATCH_ETA_DETOUR_FACTOR:1.3}
   offers:
     # A cuántos mecánicos se ofrece cada pedido, en el orden de la estrategia
     max-offers: ${DISPATCH_MAX_OFFERS:3}
