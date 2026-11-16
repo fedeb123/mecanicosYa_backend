@@ -136,10 +136,10 @@ function renderAssistance(assistance, dispatch, history) {
     const d = dispatch.data;
     const offers = (d.offers || []).map(o => {
       const m = store.mechanics.find(x => x.id === o.mechanicId);
-      return `<div>${o.ranking}. ${m ? escapeHtml(m.name) : `<span class="mono">${escapeHtml(o.mechanicId)}</span>`} a ${o.distanceKm.toFixed(2)} km ${statusBadge(o.status)}</div>`;
+      return `<div>${o.ranking}. ${m ? escapeHtml(m.name) : `<span class="mono">${escapeHtml(o.mechanicId)}</span>`} a ${o.distanceKm.toFixed(2)} km${eta(o)} ${statusBadge(o.status)}</div>`;
     }).join('');
     const until = d.status === 'OFFERED' && d.offersExpireAt ? ` · se puede aceptar hasta ${formatDate(d.offersExpireAt)}` : '';
-    dispatchHtml = `${statusBadge(d.status)} ronda ${d.round}${until}${d.distanceKm != null ? ` · a ${d.distanceKm.toFixed(2)} km` : ''}${offers}`;
+    dispatchHtml = `${statusBadge(d.status)} ronda ${d.round}${until}${d.distanceKm != null ? ` · a ${d.distanceKm.toFixed(2)} km` : ''}${d.etaMinutes != null ? `, llega en ${d.etaMinutes} min` : ''}${offers}`;
   } else if (dispatch.status === 404) {
     dispatchHtml = 'Todavía no hay despacho registrado.';
   } else {
@@ -387,6 +387,13 @@ async function showAssistance(id, box, correlationId) {
   box.innerHTML = renderAssistance(assistance.data, dispatch, history);
 }
 
+// Tiempo de llegada: "por calle" si salió de OpenRouteService, "estimado" si es en línea recta.
+function eta(o) {
+  if (o.etaMinutes == null) return '';
+  const source = o.etaSource === 'ROUTE' ? 'por calle' : o.etaSource === 'ESTIMATE' ? 'estimado' : '';
+  return ` · ${o.etaMinutes} min${source ? ` ${source}` : ''}`;
+}
+
 const URGENCY_LABELS = { LOW: 'baja', MEDIUM: 'media', HIGH: 'alta' };
 const TRIAGE_SOURCE_LABELS = { AI: 'IA', KEYWORDS: 'palabras clave' };
 
@@ -490,10 +497,10 @@ async function showOffers(mechanicId, box) {
   const result = await api('dispatch', 'GET', `/api/dispatches/offers?mechanicId=${mechanicId}`);
   if (!result.ok) return showError(box, result);
   if (result.data.length === 0) return showInfo(box, 'Este mecánico no tiene ofertas abiertas.');
-  box.innerHTML = table(['Asistencia', 'Habilidad / vehículo', 'Distancia', 'Orden', 'Vence', ''], result.data.map(o => [
+  box.innerHTML = table(['Asistencia', 'Habilidad / vehículo', 'Distancia y llegada', 'Orden', 'Vence', ''], result.data.map(o => [
     `<span class="mono">${escapeHtml(o.assistanceId)}</span>`,
     `${escapeHtml(o.requiredSkill)} / ${escapeHtml(VEHICLE_LABELS[o.vehicleType] || o.vehicleType)}`,
-    `${o.distanceKm.toFixed(2)} km`,
+    `${o.distanceKm.toFixed(2)} km${eta(o)}`,
     String(o.ranking),
     formatDate(o.expiresAt),
     `<button type="button" data-offer="accept" data-id="${escapeHtml(o.assistanceId)}">Aceptar</button>
