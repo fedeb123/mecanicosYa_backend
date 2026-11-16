@@ -62,6 +62,12 @@ public class AssistanceRequest {
 
     private UUID assignedMechanicId;
 
+    /** Minutos estimados de llegada del mecánico asignado, según dispatch-service (null si no los calculó). */
+    private Integer assignedEtaMinutes;
+
+    /** Distancia por calle (o en línea recta, si la API de rutas no respondió) del mecánico asignado, en km. */
+    private Double assignedDistanceKm;
+
     private Integer rating;
 
     @Column(length = 500)
@@ -159,11 +165,21 @@ public class AssistanceRequest {
      * conflicto.
      */
     public void assignMechanic(UUID mechanicId) {
+        assignMechanic(mechanicId, null, null);
+    }
+
+    /** Igual que {@link #assignMechanic(UUID)}, guardando además cuánto tarda y a qué distancia está el mecánico. */
+    public void assignMechanic(UUID mechanicId, Integer etaMinutes, Double distanceKm) {
         if (status == AssistanceStatus.MATCHED && mechanicId.equals(assignedMechanicId)) {
+            // dispatch-service avisa primero por REST (sin ETA) y después por Kafka (con ETA): se completa lo que falte.
+            if (assignedEtaMinutes == null) this.assignedEtaMinutes = etaMinutes;
+            if (assignedDistanceKm == null) this.assignedDistanceKm = distanceKm;
             return;
         }
         requireStatus("receive a mechanic", AssistanceStatus.REQUESTED);
         this.assignedMechanicId = mechanicId;
+        this.assignedEtaMinutes = etaMinutes;
+        this.assignedDistanceKm = distanceKm;
         this.offersExpireAt = null;
         this.status = AssistanceStatus.MATCHED;
     }
@@ -278,6 +294,14 @@ public class AssistanceRequest {
 
     public UUID getAssignedMechanicId() {
         return assignedMechanicId;
+    }
+
+    public Integer getAssignedEtaMinutes() {
+        return assignedEtaMinutes;
+    }
+
+    public Double getAssignedDistanceKm() {
+        return assignedDistanceKm;
     }
 
     public Instant getCreatedAt() {

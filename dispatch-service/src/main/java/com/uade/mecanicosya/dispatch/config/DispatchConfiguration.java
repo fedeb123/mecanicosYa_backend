@@ -1,10 +1,13 @@
 package com.uade.mecanicosya.dispatch.config;
 
 import com.uade.mecanicosya.dispatch.application.OfferPolicy;
+import com.uade.mecanicosya.dispatch.application.RouteFacade;
 import com.uade.mecanicosya.dispatch.domain.ResilientTravelTimeEstimator;
+import com.uade.mecanicosya.dispatch.domain.RoutePlanner;
 import com.uade.mecanicosya.dispatch.domain.StraightLineTravelTimeEstimator;
 import com.uade.mecanicosya.dispatch.domain.TravelTimeEstimator;
 import com.uade.mecanicosya.dispatch.infrastructure.OpenRouteServiceClient;
+import com.uade.mecanicosya.dispatch.infrastructure.OpenRouteServiceDirections;
 import com.uade.mecanicosya.shared.security.ApiSecurity;
 import com.uade.mecanicosya.shared.security.Role;
 import org.slf4j.Logger;
@@ -42,6 +45,8 @@ public class DispatchConfiguration {
         String service = Role.SERVICE.name();
         String admin = Role.ADMIN.name();
         return apiSecurity.filterChain(http, authorize -> authorize
+                .requestMatchers(HttpMethod.GET, "/api/routes")
+                .hasAnyRole(Role.RIDER.name(), Role.MECHANIC.name(), admin)
                 .requestMatchers(HttpMethod.GET, "/api/dispatches/offers").hasAnyRole(Role.MECHANIC.name(), admin)
                 .requestMatchers(HttpMethod.POST, "/api/dispatches/*/accept", "/api/dispatches/*/decline")
                 .hasAnyRole(Role.MECHANIC.name(), admin)
@@ -67,7 +72,7 @@ public class DispatchConfiguration {
             RestClient.Builder restClientBuilder,
             @Value("${clients.openrouteservice.api-key:}") String apiKey,
             @Value("${clients.openrouteservice.base-url:https://api.openrouteservice.org}") String baseUrl,
-            @Value("${clients.openrouteservice.profile:driving-car}") String profile,
+            @Value("${clients.openrouteservice.profile:cycling-regular}") String profile,
             @Value("${clients.openrouteservice.timeout:3s}") Duration timeout,
             @Value("${dispatch.eta.average-speed-kmh:20}") double averageSpeedKmh,
             @Value("${dispatch.eta.detour-factor:1.3}") double detourFactor
@@ -82,5 +87,22 @@ public class DispatchConfiguration {
         }
         return new ResilientTravelTimeEstimator(routes,
                 new StraightLineTravelTimeEstimator(averageSpeedKmh, detourFactor));
+    }
+
+    /** Ruta con pasos para la app, con el mismo perfil que el tiempo de las ofertas; sin clave, línea recta. */
+    @Bean
+    RouteFacade routeFacade(
+            RestClient.Builder restClientBuilder,
+            @Value("${clients.openrouteservice.api-key:}") String apiKey,
+            @Value("${clients.openrouteservice.base-url:https://api.openrouteservice.org}") String baseUrl,
+            @Value("${clients.openrouteservice.profile:cycling-regular}") String profile,
+            @Value("${clients.openrouteservice.timeout:3s}") Duration timeout,
+            @Value("${dispatch.eta.average-speed-kmh:20}") double averageSpeedKmh,
+            @Value("${dispatch.eta.detour-factor:1.3}") double detourFactor
+    ) {
+        Optional<RoutePlanner> planner = apiKey.isBlank()
+                ? Optional.empty()
+                : Optional.of(new OpenRouteServiceDirections(restClientBuilder.clone(), baseUrl, apiKey, profile, timeout));
+        return new RouteFacade(planner, averageSpeedKmh, detourFactor);
     }
 }

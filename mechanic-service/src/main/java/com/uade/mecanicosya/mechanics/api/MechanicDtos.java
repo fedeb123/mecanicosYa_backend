@@ -1,5 +1,6 @@
 package com.uade.mecanicosya.mechanics.api;
 
+import com.uade.mecanicosya.mechanics.application.MechanicFacade;
 import com.uade.mecanicosya.mechanics.domain.Mechanic;
 import com.uade.mecanicosya.mechanics.domain.VehicleType;
 import com.uade.mecanicosya.mechanics.domain.VerificationStatus;
@@ -71,5 +72,28 @@ public final class MechanicDtos {
             );
         }
     }
-}
 
+    /** Lo que ve el repartidor en el mapa: sin email ni datos de contacto. */
+    public record NearbyMechanicResponse(
+            UUID id,
+            String name,
+            double latitude,
+            double longitude,
+            double distanceKm,
+            double rating,
+            Set<VehicleType> vehicleTypes
+    ) {
+        public static NearbyMechanicResponse from(MechanicFacade.NearbyMechanic nearby) {
+            Mechanic mechanic = nearby.mechanic();
+            return new NearbyMechanicResponse(
+                    mechanic.getId(),
+                    mechanic.getName(),
+                    mechanic.getLatitude(),
+                    mechanic.getLongitude(),
+                    Math.round(nearby.distanceKm() * 100) / 100.0,
+                    mechanic.getRating(),
+                    mechanic.getVehicleTypes()
+            );
+        }
+    }
+}

@@ -37,5 +37,20 @@ public interface MechanicRepository extends JpaRepository<Mechanic, UUID> {
             @Param("skill") String skill,
             @Param("vehicleType") VehicleType vehicleType
     );
-}
 
+    /** Mecánicos aprobados y disponibles dentro de un rectángulo; el filtro fino por radio lo hace la fachada. */
+    @Query("""
+            select mechanic
+            from Mechanic mechanic
+            where mechanic.available = true
+              and mechanic.verificationStatus = com.uade.mecanicosya.mechanics.domain.VerificationStatus.APPROVED
+              and mechanic.latitude between :minLatitude and :maxLatitude
+              and mechanic.longitude between :minLongitude and :maxLongitude
+            """)
+    List<Mechanic> findAvailableInBox(
+            @Param("minLatitude") double minLatitude,
+            @Param("maxLatitude") double maxLatitude,
+            @Param("minLongitude") double minLongitude,
+            @Param("maxLongitude") double maxLongitude
+    );
+}

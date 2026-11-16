@@ -169,7 +169,12 @@ public class AssistanceFacade {
      */
     @Transactional
     public AssistanceRequest assign(UUID assistanceId, UUID mechanicId) {
-        return transition(assistanceId, assistance -> assistance.assignMechanic(mechanicId));
+        return assign(assistanceId, mechanicId, null, null);
+    }
+
+    @Transactional
+    public AssistanceRequest assign(UUID assistanceId, UUID mechanicId, Integer etaMinutes, Double distanceKm) {
+        return transition(assistanceId, assistance -> assistance.assignMechanic(mechanicId, etaMinutes, distanceKm));
     }
 
     @Transactional

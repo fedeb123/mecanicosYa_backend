@@ -4,6 +4,7 @@ import com.uade.mecanicosya.mechanics.application.MechanicFacade;
 import com.uade.mecanicosya.mechanics.api.MechanicDtos.AvailabilityRequest;
 import com.uade.mecanicosya.mechanics.api.MechanicDtos.CreateMechanicRequest;
 import com.uade.mecanicosya.mechanics.api.MechanicDtos.MechanicResponse;
+import com.uade.mecanicosya.mechanics.api.MechanicDtos.NearbyMechanicResponse;
 import com.uade.mecanicosya.mechanics.api.MechanicDtos.RatingRequest;
 import com.uade.mecanicosya.mechanics.domain.VehicleType;
 import com.uade.mecanicosya.mechanics.domain.VerificationStatus;
@@ -11,6 +12,8 @@ import com.uade.mecanicosya.shared.security.CurrentUser;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -67,6 +70,20 @@ public class MechanicController {
             description = "The mechanic's next token (login or refresh) says APPROVED.")
     public MechanicResponse approve(@PathVariable UUID id) {
         return MechanicResponse.from(facade.approve(id));
+    }
+
+    @GetMapping("/nearby")
+    @Operation(summary = "Available, approved mechanics near a point, closest first (role RIDER or ADMIN)",
+            description = "Straight-line distance, radius 3 km by default (max 20). Only what the map needs: no email.")
+    public List<NearbyMechanicResponse> nearby(
+            @RequestParam @DecimalMin("-90.0") @DecimalMax("90.0") double latitude,
+            @RequestParam @DecimalMin("-180.0") @DecimalMax("180.0") double longitude,
+            @RequestParam(defaultValue = "3") @DecimalMin("0.1") @DecimalMax("20.0") double radiusKm,
+            @RequestParam(required = false) VehicleType vehicleType
+    ) {
+        return facade.findNearby(latitude, longitude, radiusKm, vehicleType).stream()
+                .map(NearbyMechanicResponse::from)
+                .toList();
     }
 
     @GetMapping("/{id}")

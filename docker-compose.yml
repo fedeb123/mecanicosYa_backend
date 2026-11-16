@@ -153,7 +153,7 @@ services:
       DISPATCH_MATCHING_STRATEGY: ${DISPATCH_MATCHING_STRATEGY:-nearest}
       # Se toma de la terminal que corre docker compose; sin clave el tiempo de llegada se estima en línea recta.
       ORS_API_KEY: ${ORS_API_KEY:-}
-      ORS_PROFILE: ${ORS_PROFILE:-driving-car}
+      ORS_PROFILE: ${ORS_PROFILE:-cycling-regular}
     ports:
       - "8083:8083"
     depends_on:

@@ -48,7 +48,9 @@ public class DispatchEventsListener {
                 );
                 case MATCHED -> assistanceFacade.assign(
                         assistanceId,
-                        UUID.fromString(required(event, "mechanicId").asString())
+                        UUID.fromString(required(event, "mechanicId").asString()),
+                        optional(event, "etaMinutes") == null ? null : optional(event, "etaMinutes").asInt(),
+                        optional(event, "distanceKm") == null ? null : optional(event, "distanceKm").asDouble()
                 );
                 case UNMATCHED -> assistanceFacade.markUnmatched(assistanceId);
                 default -> LOGGER.debug("Ignoring {} for assistance {}", type, assistanceId);
@@ -56,6 +58,11 @@ public class DispatchEventsListener {
         } catch (InvalidStatusTransitionException | AssistanceNotFoundException exception) {
             LOGGER.info("Skipping {} for assistance {}: {}", type, assistanceId, exception.getMessage());
         }
+    }
+
+    private static JsonNode optional(JsonNode event, String field) {
+        JsonNode value = event.get(field);
+        return value == null || value.isNull() ? null : value;
     }
 
     private static JsonNode required(JsonNode event, String field) {
