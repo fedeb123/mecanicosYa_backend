@@ -62,6 +62,13 @@ public class AssistanceRequest {
 
     private UUID assignedMechanicId;
 
+    private Integer rating;
+
+    @Column(length = 500)
+    private String ratingComment;
+
+    private Instant ratedAt;
+
     @Column(nullable = false)
     private Instant createdAt;
 
@@ -190,6 +197,19 @@ public class AssistanceRequest {
         this.status = AssistanceStatus.CANCELLED;
     }
 
+    public void rate(int score, String comment, Instant ratedAt) {
+        requireStatus("be rated", AssistanceStatus.COMPLETED);
+        if (rating != null) {
+            throw new AssistanceAlreadyRatedException(id);
+        }
+        if (score < 1 || score > 5) {
+            throw new IllegalArgumentException("The rating must be between 1 and 5");
+        }
+        this.rating = score;
+        this.ratingComment = comment == null || comment.isBlank() ? null : comment.trim();
+        this.ratedAt = ratedAt;
+    }
+
     private void requireStatus(String action, AssistanceStatus... allowed) {
         for (AssistanceStatus candidate : allowed) {
             if (status == candidate) {
@@ -252,6 +272,18 @@ public class AssistanceRequest {
 
     public Instant getCreatedAt() {
         return createdAt;
+    }
+
+    public Integer getRating() {
+        return rating;
+    }
+
+    public String getRatingComment() {
+        return ratingComment;
+    }
+
+    public Instant getRatedAt() {
+        return ratedAt;
     }
 
     public String getIdempotencyKey() {

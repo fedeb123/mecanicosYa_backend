@@ -5,8 +5,11 @@ import com.uade.mecanicosya.assistance.application.ClientNotFoundException;
 import com.uade.mecanicosya.assistance.application.DispatchFailedException;
 import com.uade.mecanicosya.assistance.application.DispatchUnavailableException;
 import com.uade.mecanicosya.assistance.application.DuplicateClientException;
+import com.uade.mecanicosya.assistance.application.MechanicServiceFailedException;
+import com.uade.mecanicosya.assistance.application.MechanicServiceUnavailableException;
 import com.uade.mecanicosya.assistance.application.RequestExpiredException;
 import com.uade.mecanicosya.assistance.application.VehicleNotFoundException;
+import com.uade.mecanicosya.assistance.domain.AssistanceAlreadyRatedException;
 import com.uade.mecanicosya.assistance.domain.InvalidStatusTransitionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -82,6 +85,7 @@ public class AssistanceExceptionHandler {
 
     @ExceptionHandler({
             InvalidStatusTransitionException.class,
+            AssistanceAlreadyRatedException.class,
             DuplicateClientException.class,
             DataIntegrityViolationException.class,
             OptimisticLockingFailureException.class
@@ -108,6 +112,25 @@ public class AssistanceExceptionHandler {
         LOGGER.warn("dispatch-service answered with an error", exception);
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_GATEWAY, exception.getMessage());
         problem.setTitle("Dispatch service error");
+        return problem;
+    }
+
+    @ExceptionHandler(MechanicServiceUnavailableException.class)
+    ProblemDetail mechanicServiceUnavailable(MechanicServiceUnavailableException exception) {
+        LOGGER.warn("mechanic-service is not reachable", exception);
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.SERVICE_UNAVAILABLE,
+                "mechanic-service is not available; the rating was not saved and can be sent again"
+        );
+        problem.setTitle("Mechanic service unavailable");
+        return problem;
+    }
+
+    @ExceptionHandler(MechanicServiceFailedException.class)
+    ProblemDetail mechanicServiceFailed(MechanicServiceFailedException exception) {
+        LOGGER.warn("mechanic-service answered with an error", exception);
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_GATEWAY, exception.getMessage());
+        problem.setTitle("Mechanic service error");
         return problem;
     }
 }

@@ -31,6 +31,7 @@ public class AssistanceFacade {
     private final ClientFacade clientFacade;
     private final AssistanceFactory factory;
     private final ApplicationEventPublisher applicationEventPublisher;
+    private final MechanicRatingPort mechanicRatingPort;
     private final RequestPolicy requestPolicy;
     private final Clock clock;
 
@@ -40,6 +41,7 @@ public class AssistanceFacade {
             ClientFacade clientFacade,
             AssistanceFactory factory,
             ApplicationEventPublisher applicationEventPublisher,
+            MechanicRatingPort mechanicRatingPort,
             RequestPolicy requestPolicy,
             Clock clock
     ) {
@@ -48,6 +50,7 @@ public class AssistanceFacade {
         this.clientFacade = clientFacade;
         this.factory = factory;
         this.applicationEventPublisher = applicationEventPublisher;
+        this.mechanicRatingPort = mechanicRatingPort;
         this.requestPolicy = requestPolicy;
         this.clock = clock;
     }
@@ -176,6 +179,19 @@ public class AssistanceFacade {
     @Transactional
     public AssistanceRequest cancel(UUID id) {
         return transition(id, AssistanceRequest::cancel);
+    }
+
+    /**
+     * Califica al mecánico de una asistencia terminada. Primero valida en el dominio, después
+     * avisa a mechanic-service y recién entonces guarda: si el otro servicio no responde, la
+     * transacción se revierte y el cliente puede reintentar sin duplicar la calificación.
+     */
+    @Transactional
+    public AssistanceRequest rate(UUID id, int score, String comment) {
+        AssistanceRequest assistance = find(id);
+        assistance.rate(score, comment, clock.instant());
+        mechanicRatingPort.rate(assistance.getAssignedMechanicId(), assistance.getId(), score);
+        return repository.save(assistance);
     }
 
     /**

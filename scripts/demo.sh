@@ -113,6 +113,18 @@ echo
 echo "Despacho:"
 curl -fsS "http://localhost:8083/api/dispatches/${assistance_id}"
 echo
+
+curl -fsS -X POST "http://localhost:8082/api/assistances/${assistance_id}/start" >/dev/null
+curl -fsS -X POST "http://localhost:8082/api/assistances/${assistance_id}/complete" >/dev/null
+echo "Calificación del trabajo:"
+curl -fsS -X POST "http://localhost:8082/api/assistances/${assistance_id}/rating" \
+  -H 'Content-Type: application/json' \
+  -d '{"score":4,"comment":"Llegó rápido y dejó la bici andando"}'
+echo
+assigned_mechanic_id=$(curl -fsS "http://localhost:8082/api/assistances/${assistance_id}" | json_field assignedMechanicId)
+echo "Mecánico con su calificación actualizada:"
+curl -fsS "http://localhost:8081/api/mechanics/${assigned_mechanic_id}"
+echo
 echo "Historial de estados:"
 curl -fsS "http://localhost:8082/api/assistances/${assistance_id}/history"
 echo

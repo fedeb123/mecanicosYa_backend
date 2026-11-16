@@ -81,6 +81,7 @@ services:
       DB_PASSWORD: assistances_pass
       SPRING_DATASOURCE_HIKARI_INITIALIZATION_FAIL_TIMEOUT: 60000
       DISPATCH_SERVICE_URL: http://dispatch-service:8083
+      MECHANIC_SERVICE_URL: http://mechanic-service:8081
     ports:
       - "8082:8082"
     depends_on:

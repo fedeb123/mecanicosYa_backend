@@ -6,6 +6,8 @@ import com.uade.mecanicosya.assistance.domain.StatusChange;
 import com.uade.mecanicosya.assistance.domain.VehicleType;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -45,6 +47,8 @@ public final class AssistanceDtos {
             double longitude,
             AssistanceStatus status,
             UUID assignedMechanicId,
+            Integer rating,
+            String ratingComment,
             Instant offersExpireAt,
             String idempotencyKey,
             Instant clientCreatedAt,
@@ -63,12 +67,20 @@ public final class AssistanceDtos {
                     assistance.getLongitude(),
                     assistance.getStatus(),
                     assistance.getAssignedMechanicId(),
+                    assistance.getRating(),
+                    assistance.getRatingComment(),
                     assistance.getOffersExpireAt(),
                     assistance.getIdempotencyKey(),
                     assistance.getClientCreatedAt(),
                     assistance.getCreatedAt()
             );
         }
+    }
+
+    public record RateAssistanceRequest(
+            @NotNull @Min(1) @Max(5) Integer score,
+            @Size(max = 500) String comment
+    ) {
     }
 
     public record StatusChangeResponse(
