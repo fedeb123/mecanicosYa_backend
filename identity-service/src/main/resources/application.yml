@@ -44,6 +44,11 @@ management:
       probes:
         enabled: true
 
+mecanicosya:
+  api:
+    # Lo que muestran Swagger y el contrato exportado en docs/contratos/.
+    description: "Cuentas de repartidor, mecánico y admin: alta, login, refresh y logout con JWT, token de servicio y la clave pública (JWKS) con la que los otros servicios validan los tokens. Consume mechanic.events."
+
 springdoc:
   swagger-ui:
     path: /swagger-ui.html

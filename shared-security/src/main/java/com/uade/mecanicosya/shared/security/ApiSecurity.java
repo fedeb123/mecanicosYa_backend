@@ -18,6 +18,7 @@ public class ApiSecurity {
             "/error",
             "/actuator/**",
             "/v3/api-docs/**",
+            "/v3/api-docs.yaml",
             "/swagger-ui/**",
             "/swagger-ui.html"
     };

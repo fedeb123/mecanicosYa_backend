@@ -31,6 +31,9 @@ spring:
           jwk-set-uri: ${IDENTITY_JWKS_URI:http://localhost:8084/.well-known/jwks.json}
 
 mecanicosya:
+  api:
+    # Lo que muestran Swagger y el contrato exportado en docs/contratos/.
+    description: "Repartidores, vehículos y pedidos de asistencia: alta idempotente, clasificación del texto con IA, estados, cancelación y calificación. Publica assistance.events y consume dispatch.events."
   security:
     identity-url: ${IDENTITY_SERVICE_URL:http://localhost:8084}
     # Con secreto, las llamadas a dispatch-service llevan un token de servicio. Lo comparte con identity-service.

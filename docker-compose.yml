@@ -11,10 +11,25 @@ services:
       - mecanicosya-postgres-data:/var/lib/postgresql/data
       - ./infra/postgres/init-databases.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U mecanicosya_admin -d postgres"]
+      # Por TCP: durante el primer arranque Postgres corre los scripts de init escuchando sólo en el socket local,
+      # y recién después abre el puerto. Así nadie se conecta antes de que existan las bases.
+      test: ["CMD-SHELL", "pg_isready -h localhost -U mecanicosya_admin -d postgres"]
       interval: 5s
       timeout: 5s
       retries: 20
+
+  # Crea las bases que falten en un volumen ya existente y termina.
+  postgres-setup:
+    image: postgis/postgis:16-3.4
+    environment:
+      PGPASSWORD: mecanicosya_admin_pass
+    command: ["psql", "-h", "postgres", "-U", "mecanicosya_admin", "-d", "postgres", "-v", "ON_ERROR_STOP=1",
+              "-f", "/sql/ensure-identity-db.sql"]
+    volumes:
+      - ./infra/postgres/ensure-identity-db.sql:/sql/ensure-identity-db.sql:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   kafka:
     image: apache/kafka:4.1.0
@@ -52,6 +67,39 @@ services:
       kafka:
         condition: service_healthy
 
+  identity-service:
+    restart: on-failure
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile
+      args:
+        MODULE: identity-service
+    environment:
+      SERVER_PORT: 8084
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      DB_URL: jdbc:postgresql://postgres:5432/identity_db
+      DB_USERNAME: identity_user
+      DB_PASSWORD: identity_pass
+      SPRING_DATASOURCE_HIKARI_INITIALIZATION_FAIL_TIMEOUT: 60000
+      # El admin que aprueba mecánicos. Para la demo local; en otro entorno se pasan desde la terminal.
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@mecanicosya.local}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin-demo-123}
+      # Los servicios que llaman a otros por REST piden su token con estos secretos.
+      ASSISTANCE_SERVICE_SECRET: ${ASSISTANCE_SERVICE_SECRET:-assistance-dev-secret}
+      DISPATCH_SERVICE_SECRET: ${DISPATCH_SERVICE_SECRET:-dispatch-dev-secret}
+    ports:
+      - "8084:8084"
+    depends_on:
+      postgres-setup:
+        condition: service_completed_successfully
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8084/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
   mechanic-service:
     restart: on-failure
     build:
@@ -66,12 +114,15 @@ services:
       DB_USERNAME: mechanics_user
       DB_PASSWORD: mechanics_pass
       SPRING_DATASOURCE_HIKARI_INITIALIZATION_FAIL_TIMEOUT: 60000
+      IDENTITY_JWKS_URI: http://identity-service:8084/.well-known/jwks.json
     ports:
       - "8081:8081"
     depends_on:
       postgres:
         condition: service_healthy
       kafka:
+        condition: service_healthy
+      identity-service:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:8081/actuator/health"]
@@ -95,6 +146,9 @@ services:
       SPRING_DATASOURCE_HIKARI_INITIALIZATION_FAIL_TIMEOUT: 60000
       MECHANIC_SERVICE_URL: http://mechanic-service:8081
       ASSISTANCE_SERVICE_URL: http://assistance-service:8082
+      IDENTITY_SERVICE_URL: http://identity-service:8084
+      IDENTITY_JWKS_URI: http://identity-service:8084/.well-known/jwks.json
+      SERVICE_CLIENT_SECRET: ${DISPATCH_SERVICE_SECRET:-dispatch-dev-secret}
       # nearest, best-rated o fastest-eta (el que llega antes por calle)
       DISPATCH_MATCHING_STRATEGY: ${DISPATCH_MATCHING_STRATEGY:-nearest}
       # Se toma de la terminal que corre docker compose; sin clave el tiempo de llegada se estima en línea recta.
@@ -126,6 +180,9 @@ services:
       DB_PASSWORD: assistances_pass
       SPRING_DATASOURCE_HIKARI_INITIALIZATION_FAIL_TIMEOUT: 60000
       DISPATCH_SERVICE_URL: http://dispatch-service:8083
+      IDENTITY_SERVICE_URL: http://identity-service:8084
+      IDENTITY_JWKS_URI: http://identity-service:8084/.well-known/jwks.json
+      SERVICE_CLIENT_SECRET: ${ASSISTANCE_SERVICE_SECRET:-assistance-dev-secret}
       # Se toman de la terminal que corre docker compose; sin clave se clasifica con palabras clave.
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       TRIAGE_MODEL: ${TRIAGE_MODEL:-claude-opus-5-5}

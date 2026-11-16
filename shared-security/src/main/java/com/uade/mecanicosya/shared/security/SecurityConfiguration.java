@@ -1,9 +1,11 @@
 package com.uade.mecanicosya.shared.security;
 
 import io.swagger.v3.oas.models.Components;
+import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springdoc.core.customizers.OpenApiCustomizer;
+import org.springdoc.core.utils.SpringDocUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.context.annotation.Bean;
@@ -70,6 +72,11 @@ public class SecurityConfiguration {
 
         static final String SCHEME = "bearerAuth";
 
+        static {
+            // El usuario sale del token, no del request: que Swagger no lo muestre como parámetro.
+            SpringDocUtils.getConfig().addRequestWrapperToIgnore(CurrentUser.class);
+        }
+
         @Bean
         OpenApiCustomizer bearerAuthentication() {
             return openApi -> {
@@ -82,6 +89,19 @@ public class SecurityConfiguration {
                         .bearerFormat("JWT"));
                 openApi.addSecurityItem(new SecurityRequirement().addList(SCHEME));
             };
+        }
+
+        /** Nombre, versión y descripción del contrato, para que el YAML exportado diga de qué servicio es. */
+        @Bean
+        OpenApiCustomizer apiInfo(
+                @Value("${spring.application.name}") String serviceName,
+                @Value("${mecanicosya.api.version:2.0}") String version,
+                @Value("${mecanicosya.api.description:}") String description
+        ) {
+            return openApi -> openApi.setInfo(new Info()
+                    .title("MecanicosYa · " + serviceName)
+                    .version(version)
+                    .description(description.isBlank() ? null : description));
         }
     }
 }
