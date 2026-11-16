@@ -24,9 +24,10 @@ La consigna pide al menos tres componentes independientes: de dominio, de acceso
 
 | Tipo | Componentes | Por qué es reutilizable |
 |---|---|---|
-| Dominio | `AssistanceRequest`, `Client`, `Vehicle`, `StatusChange` (asistencias); `Mechanic` con sus habilidades y tipos de vehículo (mecánicos); `DispatchMatch`, `MatchingStrategy` (despacho) | Las reglas viven en las entidades (por ejemplo, no se asigna un mecánico a una asistencia cerrada) y no dependen de los controladores ni de HTTP |
-| Acceso a datos | `AssistanceRepository`, `ClientRepository`, `VehicleRepository`, `StatusChangeRepository`, `DispatchRepository` y `MechanicRepository` | Son interfaces en el paquete `domain` que extienden Spring Data JPA. Los casos de uso no conocen SQL ni la base concreta |
+| Dominio | `AssistanceRequest`, `Client`, `Vehicle`, `StatusChange` (asistencias); `Mechanic` con sus habilidades, tipos de vehículo y calificaciones (`MechanicRating`) (mecánicos); `DispatchMatch`, `MatchingStrategy` (despacho) | Las reglas viven en las entidades (por ejemplo, no se asigna un mecánico a una asistencia cerrada) y no dependen de los controladores ni de HTTP |
+| Acceso a datos | `AssistanceRepository`, `ClientRepository`, `VehicleRepository`, `StatusChangeRepository`, `DispatchRepository`, `MechanicRepository` y `MechanicRatingRepository` | Son interfaces en el paquete `domain` que extienden Spring Data JPA. Los casos de uso no conocen SQL ni la base concreta |
 | Utilidad | Módulo `shared-observability`: `ObservabilityConfiguration` registra `CorrelationIdFilter`, que toma o genera el encabezado `X-Correlation-Id`, lo pone en el MDC para los logs y lo devuelve en la respuesta; validación con Bean Validation; errores con Problem Details; configuración externalizada en `application.yml` con variables de entorno | Lo usan los tres servicios sin duplicar código, y cada valor de entorno (URL de base, credenciales, URLs de otros servicios) se cambia sin recompilar |
+| Utilidad | Módulo `shared-security`: `ApiSecurity` arma el filtro que valida el JWT de identity-service y aplica las reglas por rol; `CurrentUser` trae el usuario del token a los controladores; `ServiceTokenInterceptor` agrega el token de servicio a las llamadas REST internas | Los cuatro servicios validan el token igual y cada uno declara sólo sus reglas. Se prueba solo, con `TestJwt` en su test-jar |
 
 ## 4. Aplicación multicapa
 
@@ -47,14 +48,17 @@ Cada servicio hereda del proyecto padre `mecanicosya-backend` (versión `0.1.0-S
 | Modo | Dónde se ve | Cómo funciona |
 |---|---|---|
 | Invocación directa (local) | `AssistanceFacade` → `AssistanceFactory` y `AssistanceRepository` | Llamadas Java dentro del mismo proceso y la misma transacción |
-| A través de interfaz, local | `AssistanceFacade` publica `AssistanceRequestedEvent` (lo recibe `AssistanceDispatchCoordinator`) y `AssistanceStatusChangedEvent` (lo recibe `StatusHistoryRecorder`) | Comunicación desacoplada por eventos de dominio dentro del proceso: el emisor no conoce al receptor |
-| A través de interfaz, remota | `AssistanceDispatchCoordinator` → `DispatchPort` → `DispatchRestClient` → `POST /api/dispatches`; `DispatchFacade` → `MechanicDirectory` → `MechanicRestClient` → `GET /api/mechanics/candidates` | El caso de uso depende sólo de la interfaz (`DispatchPort`, `MechanicDirectory`). La implementación hace la llamada HTTP REST, y podría reemplazarse por una implementación local, por ejemplo en un test, sin tocar el caso de uso |
+| A través de interfaz, local | `AssistanceFacade` publica `AssistanceRequestedEvent` y `AssistanceStatusChangedEvent`; los reciben `StatusHistoryRecorder` y `AssistanceEventPublisher` | Comunicación desacoplada por eventos de dominio dentro del proceso: el emisor no conoce al receptor |
+| A través de interfaz, remota (REST) | `AssistanceDispatchCoordinator` → `DispatchPort` → `DispatchRestClient` → `POST /api/dispatches`; `DispatchFacade` → `MechanicDirectory` → `MechanicRestClient` → `GET /api/mechanics/candidates`; `DispatchFacade` → `AssistanceAssignmentPort` → `AssistanceRestClient` → `POST /api/assistances/{id}/assign` | El caso de uso depende sólo de la interfaz (`DispatchPort`, `MechanicDirectory`, `AssistanceAssignmentPort`). La implementación hace la llamada HTTP REST, y podría reemplazarse por una implementación local, por ejemplo en un test, sin tocar el caso de uso |
+| A través de interfaz, remota (mensajes) | `AssistanceFacade` → `MechanicRatingPort` → `KafkaMechanicRatingPublisher` → `assistance.events`; `DispatchFacade` → `DispatchEventPublisher` → `KafkaDispatchEventPublisher` → `dispatch.events` | Igual que en REST, el caso de uso sólo conoce el puerto. El evento se guarda en el outbox en la misma transacción y llega al otro servicio por Kafka aunque esté caído en ese momento ([Mensajería con Kafka](MENSAJERIA.md)) |
+| A través de interfaz, remota (servicio externo) | `AssistanceIntake` → `TriageService` → `ProblemClassifier` → `ClaudeProblemClassifier` → API de Claude | El caso de uso no sabe si clasifica un modelo de IA o el respaldo por palabras clave (`KeywordProblemClassifier`). Si la API no responde, el pedido se clasifica igual ([Clasificación con IA](CLASIFICACION_CON_IA.md)) |
+| A través de interfaz, remota (API externa) | `DispatchFacade` y `FastestEtaMechanicStrategy` → `TravelTimeEstimator` → `ResilientTravelTimeEstimator` → `OpenRouteServiceClient` → Matrix API de OpenRouteService | El despacho sólo conoce la interfaz. Si la API no responde, `StraightLineTravelTimeEstimator` estima en línea recta ([API externa: rutas](API_EXTERNA_RUTAS.md)) |
 
-La diferencia práctica es que la invocación remota puede fallar por red o por un servicio caído. Por eso cada cliente REST tiene un tiempo máximo de respuesta y traduce la falla a una excepción propia del caso de uso, que la API devuelve como `503` (servicio no disponible) o `502` (el otro servicio respondió con error). En el alta, el coordinador captura el error, deja la asistencia en `REQUESTED` y expone `POST /api/assistances/{id}/dispatch` para reintentar.
+La diferencia práctica es que la invocación remota puede fallar por red o por un servicio caído. Por eso cada cliente REST tiene un tiempo máximo de respuesta y traduce la falla a una excepción propia del caso de uso, que la API devuelve como `503` (servicio no disponible) o `502` (el otro servicio respondió con error). El alta no llama a otro servicio: el pedido viaja por Kafka, y `POST /api/assistances/{id}/dispatch` lo vuelve a publicar por REST si hace falta.
 
 ## 7. Diagramas
 
-Todos están en [`diagramas/`](diagramas/README.md), en HTML y PNG.
+Los de la Primera Parte están en [`diagramas/`](diagramas/README.md), en HTML y PNG. Las versiones de la Segunda Parte, con Kafka, identity-service, la clasificación con IA y OpenRouteService, están en [ARQUITECTURA.md](ARQUITECTURA.md) (componentes, capas, flujo principal y despliegue) y en [DIAGRAMA_DE_CLASES.md](DIAGRAMA_DE_CLASES.md).
 
 | Entregable | Diagrama |
 |---|---|
@@ -66,7 +70,7 @@ Todos están en [`diagramas/`](diagramas/README.md), en HTML y PNG.
 
 ## 8. Evidencias de ejecución
 
-Las evidencias están en [`evidencias/`](evidencias/README.md) y se regeneran con `./scripts/evidencias.sh`.
+Las de la Primera Parte están en [`evidencias/`](evidencias/README.md) y se regeneran con `./scripts/evidencias.sh`. Las de la Segunda Parte están en [`evidencias/segunda-parte/`](evidencias/segunda-parte/) y se explican en [GUIA_DE_EVIDENCIAS.md](GUIA_DE_EVIDENCIAS.md).
 
 - **Local**: build y tests con Maven (`01`), logs de la fachada, el repositorio con sus sentencias SQL y los eventos de dominio dentro del mismo proceso (`06`), y una base de datos por servicio (`04`).
 - **Remota**: contenedores saludables (`02`), contratos OpenAPI y Swagger (`03`), flujo completo entre los tres servicios (`05`), el mismo correlation id en los logs de los tres servicios (`07`), y fallas remotas con timeout y reintento (`10`).
@@ -76,4 +80,4 @@ Las evidencias están en [`evidencias/`](evidencias/README.md) y se regeneran co
 - Una base lógica por servicio, con usuario propio. En el laboratorio comparten una instancia de PostgreSQL sólo para ahorrar recursos.
 - Entre servicios no hay claves foráneas: cada uno guarda el `UUID` del otro.
 - Las entidades llevan anotaciones JPA para mantener el ejercicio compacto; las reglas siguen en el dominio.
-- SOAP, colas de mensajería, API externa e inteligencia artificial corresponden a la Segunda Parte y al Integrador.
+- SOAP, mensajería con Kafka, API externa e inteligencia artificial se suman en la Segunda Parte: ver [Servicio SOAP](SERVICIO_SOAP.md), [Mensajería](MENSAJERIA.md), [API externa: rutas](API_EXTERNA_RUTAS.md) y [Clasificación con IA](CLASIFICACION_CON_IA.md).
