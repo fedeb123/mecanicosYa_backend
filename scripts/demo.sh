@@ -96,11 +96,11 @@ done
 
 # El perfil se crea con el id y el email del token.
 api "${token[ada]}" POST "${MECHANICS}/api/mechanics" \
-  '{"name":"Ada Mecánica","latitude":-34.5800,"longitude":-58.4255,"skills":["CHAIN_REPAIR","TIRE_REPAIR"],"vehicleTypes":["BICYCLE","E_BIKE"]}' >/dev/null
+  '{"name":"Ada Mecánica","phone":"11 5555 0101","latitude":-34.5800,"longitude":-58.4255,"skills":["CHAIN_REPAIR","TIRE_REPAIR"],"vehicleTypes":["BICYCLE","E_BIKE"]}' >/dev/null
 api "${token[linus]}" POST "${MECHANICS}/api/mechanics" \
-  '{"name":"Linus Motos","latitude":-34.6400,"longitude":-58.4400,"skills":["BRAKE_REPAIR"],"vehicleTypes":["MOTORCYCLE"]}' >/dev/null
+  '{"name":"Linus Motos","phone":"11 5555 0102","latitude":-34.6400,"longitude":-58.4400,"skills":["BRAKE_REPAIR"],"vehicleTypes":["MOTORCYCLE"]}' >/dev/null
 api "${token[grace]}" POST "${MECHANICS}/api/mechanics" \
-  '{"name":"Grace Rodados","latitude":-34.5840,"longitude":-58.4300,"skills":["CHAIN_REPAIR"],"vehicleTypes":["BICYCLE"]}' >/dev/null
+  '{"name":"Grace Rodados","phone":"11 5555 0103","latitude":-34.5840,"longitude":-58.4300,"skills":["CHAIN_REPAIR"],"vehicleTypes":["BICYCLE"]}' >/dev/null
 
 echo "   Ada todavía no fue aprobada: ponerse disponible le da"
 curl -sS -o /dev/null -w '   HTTP %{http_code}\n' -X PATCH "${MECHANICS}/api/mechanics/${id[ada]}/availability" \

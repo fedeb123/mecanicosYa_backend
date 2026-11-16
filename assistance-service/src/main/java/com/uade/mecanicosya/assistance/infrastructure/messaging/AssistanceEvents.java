@@ -29,7 +29,9 @@ public final class AssistanceEvents {
             String problemType,
             String requiredSkill,
             double latitude,
-            double longitude
+            double longitude,
+            /** MOBILE, WORKSHOP o null (cualquiera): dispatch solo ofrece a mecánicos de ese tipo. */
+            String mechanicKind
     ) implements IntegrationEvent {
     }
 

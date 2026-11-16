@@ -45,6 +45,23 @@ public class AssistanceIntake {
             String idempotencyKey,
             Instant clientCreatedAt
     ) {
+        return request(clientId, vehicleId, description, problemType, requiredSkill, latitude, longitude,
+                idempotencyKey, clientCreatedAt, null);
+    }
+
+    /** Igual, con la preferencia del repartidor: MOBILE, WORKSHOP o null (cualquiera). */
+    public AssistanceCreation request(
+            UUID clientId,
+            UUID vehicleId,
+            String description,
+            String problemType,
+            String requiredSkill,
+            double latitude,
+            double longitude,
+            String idempotencyKey,
+            Instant clientCreatedAt,
+            String preferredMechanicKind
+    ) {
         if (idempotencyKey != null && !idempotencyKey.isBlank()) {
             Optional<AssistanceRequest> existing = facade.findByIdempotencyKey(clientId, idempotencyKey);
             if (existing.isPresent()) {
@@ -68,7 +85,8 @@ public class AssistanceIntake {
                 longitude,
                 idempotencyKey,
                 clientCreatedAt,
-                triage
+                triage,
+                preferredMechanicKind
         );
     }
 

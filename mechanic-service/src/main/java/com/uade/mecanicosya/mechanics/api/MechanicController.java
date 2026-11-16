@@ -6,6 +6,7 @@ import com.uade.mecanicosya.mechanics.api.MechanicDtos.CreateMechanicRequest;
 import com.uade.mecanicosya.mechanics.api.MechanicDtos.MechanicResponse;
 import com.uade.mecanicosya.mechanics.api.MechanicDtos.NearbyMechanicResponse;
 import com.uade.mecanicosya.mechanics.api.MechanicDtos.RatingRequest;
+import com.uade.mecanicosya.mechanics.domain.MechanicKind;
 import com.uade.mecanicosya.mechanics.domain.VehicleType;
 import com.uade.mecanicosya.mechanics.domain.VerificationStatus;
 import com.uade.mecanicosya.shared.security.CurrentUser;
@@ -51,10 +52,13 @@ public class MechanicController {
                 user.id(),
                 request.name(),
                 user.email(),
+                request.phone(),
                 request.latitude(),
                 request.longitude(),
                 request.skills(),
-                request.vehicleTypes()
+                request.vehicleTypes(),
+                request.kind(),
+                request.address()
         ));
         return ResponseEntity.created(URI.create("/api/mechanics/" + response.id())).body(response);
     }
@@ -79,9 +83,11 @@ public class MechanicController {
             @RequestParam @DecimalMin("-90.0") @DecimalMax("90.0") double latitude,
             @RequestParam @DecimalMin("-180.0") @DecimalMax("180.0") double longitude,
             @RequestParam(defaultValue = "3") @DecimalMin("0.1") @DecimalMax("20.0") double radiusKm,
-            @RequestParam(required = false) VehicleType vehicleType
+            @RequestParam(required = false) VehicleType vehicleType,
+            @RequestParam(required = false) MechanicKind kind
     ) {
         return facade.findNearby(latitude, longitude, radiusKm, vehicleType).stream()
+                .filter(nearby -> kind == null || nearby.mechanic().getKind() == kind)
                 .map(NearbyMechanicResponse::from)
                 .toList();
     }
@@ -121,9 +127,13 @@ public class MechanicController {
             + "(role SERVICE or ADMIN)")
     public List<MechanicResponse> findCandidates(
             @RequestParam String skill,
-            @RequestParam(required = false) VehicleType vehicleType
+            @RequestParam(required = false) VehicleType vehicleType,
+            @RequestParam(required = false) MechanicKind kind
     ) {
-        return facade.findCandidates(skill, vehicleType).stream().map(MechanicResponse::from).toList();
+        return facade.findCandidates(skill, vehicleType).stream()
+                .filter(mechanic -> kind == null || mechanic.getKind() == kind)
+                .map(MechanicResponse::from)
+                .toList();
     }
 }
 

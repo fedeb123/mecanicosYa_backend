@@ -62,6 +62,10 @@ public class AssistanceRequest {
 
     private UUID assignedMechanicId;
 
+    /** Qué eligió el repartidor: MOBILE (que vaya un mecánico) o WORKSHOP (ir a un taller); null = cualquiera. */
+    @Column(length = 20)
+    private String preferredMechanicKind;
+
     /** Minutos estimados de llegada del mecánico asignado, según dispatch-service (null si no los calculó). */
     private Integer assignedEtaMinutes;
 
@@ -290,6 +294,14 @@ public class AssistanceRequest {
 
     public AssistanceStatus getStatus() {
         return status;
+    }
+
+    public void preferMechanicKind(String kind) {
+        this.preferredMechanicKind = "MOBILE".equals(kind) || "WORKSHOP".equals(kind) ? kind : null;
+    }
+
+    public String getPreferredMechanicKind() {
+        return preferredMechanicKind;
     }
 
     public UUID getAssignedMechanicId() {

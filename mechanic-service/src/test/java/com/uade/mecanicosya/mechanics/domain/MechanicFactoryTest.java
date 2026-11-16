@@ -60,4 +60,31 @@ class MechanicFactoryTest {
         assertThat(mechanic.serves(VehicleType.E_BIKE)).isTrue();
         assertThat(mechanic.serves(VehicleType.BICYCLE)).isFalse();
     }
+
+    @Test
+    void aWorkshopKeepsItsAddressAndDoesNotMoveWhenItGoesAvailable() {
+        Mechanic workshop = new MechanicFactory().create(java.util.UUID.randomUUID(), "Taller Sur", "sur@example.com",
+                -34.62, -58.37, java.util.Set.of("TIRE_REPAIR"), null);
+        workshop.changeKind(MechanicKind.WORKSHOP, " Defensa 1200 ");
+        workshop.approve();
+
+        workshop.changeAvailability(true, -34.60, -58.38);
+
+        org.assertj.core.api.Assertions.assertThat(workshop.getAddress()).isEqualTo("Defensa 1200");
+        org.assertj.core.api.Assertions.assertThat(workshop.getLatitude()).isEqualTo(-34.62);
+        org.assertj.core.api.Assertions.assertThat(workshop.getLongitude()).isEqualTo(-58.37);
+    }
+
+    @Test
+    void aMechanicWithoutKindIsMobileAndFollowsItsLocation() {
+        Mechanic mobile = new MechanicFactory().create(java.util.UUID.randomUUID(), "Ada", "ada2@example.com",
+                -34.62, -58.37, java.util.Set.of("TIRE_REPAIR"), null);
+        mobile.approve();
+
+        mobile.changeAvailability(true, -34.60, -58.38);
+
+        org.assertj.core.api.Assertions.assertThat(mobile.getKind()).isEqualTo(MechanicKind.MOBILE);
+        org.assertj.core.api.Assertions.assertThat(mobile.getLatitude()).isEqualTo(-34.60);
+        org.assertj.core.api.Assertions.assertThat(mobile.getAddress()).isNull();
+    }
 }

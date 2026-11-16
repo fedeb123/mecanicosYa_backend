@@ -138,6 +138,21 @@ class MechanicAccessTest {
     }
 
     @Test
+    void aWorkshopNeedsAnAddressAndAPhone() throws Exception {
+        String incomplete = """
+                {"name":"Taller Sur","kind":"WORKSHOP","latitude":-34.62,"longitude":-58.37,"skills":["CHAIN_REPAIR"]}""";
+        String complete = """
+                {"name":"Taller Sur","kind":"WORKSHOP","address":"Defensa 1200","phone":"1144443333",
+                "latitude":-34.62,"longitude":-58.37,"skills":["CHAIN_REPAIR"]}""";
+
+        assertThat(send("POST", "/api/mechanics", incomplete, TestJwt.pendingMechanic(UUID.randomUUID())).statusCode())
+                .isEqualTo(400);
+        HttpResponse<String> created = send("POST", "/api/mechanics", complete, TestJwt.pendingMechanic(UUID.randomUUID()));
+        assertThat(created.statusCode()).isEqualTo(201);
+        assertThat(created.body()).contains("\"kind\":\"WORKSHOP\"").contains("\"address\":\"Defensa 1200\"");
+    }
+
+    @Test
     void anAccountCreatesASingleProfile() throws Exception {
         String mechanic = TestJwt.pendingMechanic(UUID.randomUUID());
 

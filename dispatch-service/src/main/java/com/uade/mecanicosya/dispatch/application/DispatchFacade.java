@@ -240,10 +240,9 @@ public class DispatchFacade {
                 command.assistanceId(),
                 command.requiredSkill()
         );
-        List<MechanicCandidate> candidates = mechanicDirectory.findCandidates(
-                command.requiredSkill(),
-                command.vehicleType()
-        );
+        List<MechanicCandidate> candidates = command.mechanicKind() == null
+                ? mechanicDirectory.findCandidates(command.requiredSkill(), command.vehicleType())
+                : mechanicDirectory.findCandidates(command.requiredSkill(), command.vehicleType(), command.mechanicKind());
         List<MechanicCandidate> free = withoutBusyMechanics(candidates);
         List<MechanicSelection> ranked = matchingStrategy.rank(command.latitude(), command.longitude(), free)
                 .stream()

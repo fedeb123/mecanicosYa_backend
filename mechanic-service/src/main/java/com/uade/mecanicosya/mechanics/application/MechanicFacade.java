@@ -2,6 +2,7 @@ package com.uade.mecanicosya.mechanics.application;
 
 import com.uade.mecanicosya.mechanics.domain.Mechanic;
 import com.uade.mecanicosya.mechanics.domain.MechanicFactory;
+import com.uade.mecanicosya.mechanics.domain.MechanicKind;
 import com.uade.mecanicosya.mechanics.domain.MechanicRating;
 import com.uade.mecanicosya.mechanics.domain.MechanicRatingRepository;
 import com.uade.mecanicosya.mechanics.domain.MechanicRepository;
@@ -49,15 +50,21 @@ public class MechanicFacade {
             UUID id,
             String name,
             String email,
+            String phone,
             double latitude,
             double longitude,
             Set<String> skills,
-            Set<VehicleType> vehicleTypes
+            Set<VehicleType> vehicleTypes,
+            MechanicKind kind,
+            String address
     ) {
         if (repository.existsById(id)) {
             throw new MechanicAlreadyRegisteredException(id);
         }
-        return repository.save(factory.create(id, name, email, latitude, longitude, skills, vehicleTypes));
+        Mechanic mechanic = factory.create(id, name, email, latitude, longitude, skills, vehicleTypes);
+        mechanic.changePhone(phone);
+        mechanic.changeKind(kind, address);
+        return repository.save(mechanic);
     }
 
     /**

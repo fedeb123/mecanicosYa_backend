@@ -47,7 +47,8 @@ public class AssistanceEventsListener {
                         required(event, "requiredSkill").asString(),
                         required(event, "latitude").asDouble(),
                         required(event, "longitude").asDouble(),
-                        event.path("vehicleType").isString() ? event.get("vehicleType").asString() : null
+                        event.path("vehicleType").isString() ? event.get("vehicleType").asString() : null,
+                        event.path("mechanicKind").isString() ? event.get("mechanicKind").asString() : null
                 ));
             }
             case CANCELLED -> {

@@ -32,6 +32,19 @@ public class Mechanic {
     @Column(nullable = false, unique = true, length = 180)
     private String email;
 
+    /** Para que el repartidor que tiene asignado lo pueda llamar. Opcional: los perfiles viejos no lo tienen. */
+    @Column(length = 40)
+    private String phone;
+
+    /** Las filas viejas no tienen el dato: se leen como mecánico móvil. */
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private MechanicKind kind;
+
+    /** Dirección del taller, para mostrarle al repartidor adónde ir. Null para un mecánico móvil. */
+    @Column(length = 200)
+    private String address;
+
     @Column(nullable = false)
     private double latitude;
 
@@ -90,14 +103,41 @@ public class Mechanic {
         this.verificationStatus = VerificationStatus.PENDING_VERIFICATION;
     }
 
+    public void changePhone(String phone) {
+        this.phone = phone == null || phone.isBlank() ? null : phone.trim();
+    }
+
+    /** Un taller guarda su dirección; un mecánico móvil no tiene. */
+    public void changeKind(MechanicKind kind, String address) {
+        this.kind = kind == null ? MechanicKind.MOBILE : kind;
+        this.address = this.kind == MechanicKind.WORKSHOP && address != null && !address.isBlank()
+                ? address.trim()
+                : null;
+    }
+
+    public MechanicKind getKind() {
+        return kind == null ? MechanicKind.MOBILE : kind;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public boolean isWorkshop() {
+        return getKind() == MechanicKind.WORKSHOP;
+    }
+
     /** Ponerse disponible exige estar aprobado; dejar de estarlo, no. */
     public void changeAvailability(boolean available, double latitude, double longitude) {
         if (available && !isApproved()) {
             throw new MechanicNotApprovedException(id);
         }
         this.available = available;
-        this.latitude = latitude;
-        this.longitude = longitude;
+        // Un taller no se mueve: su ubicación es la dirección que cargó al registrarse.
+        if (!isWorkshop()) {
+            this.latitude = latitude;
+            this.longitude = longitude;
+        }
     }
 
     /**
@@ -161,6 +201,10 @@ public class Mechanic {
 
     public String getEmail() {
         return email;
+    }
+
+    public String getPhone() {
+        return phone;
     }
 
     public double getLatitude() {

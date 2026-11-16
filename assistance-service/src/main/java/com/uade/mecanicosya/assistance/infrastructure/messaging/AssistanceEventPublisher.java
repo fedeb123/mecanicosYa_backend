@@ -35,7 +35,8 @@ public class AssistanceEventPublisher {
                 event.problemType(),
                 event.requiredSkill(),
                 event.latitude(),
-                event.longitude()
+                event.longitude(),
+                event.preferredMechanicKind()
         ));
     }
 

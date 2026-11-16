@@ -193,6 +193,20 @@ class DispatchFacadeTest {
         assertThat(offer.getStatus()).isEqualTo(com.uade.mecanicosya.dispatch.domain.OfferStatus.DECLINED);
     }
 
+    @Test
+    void whenTheRiderChoseAWorkshopOnlyWorkshopsAreAsked() {
+        MechanicCandidate workshop = candidate(-34.6040, -58.3900);
+        when(repository.findById(assistanceId)).thenReturn(Optional.empty());
+        when(repository.save(any(DispatchMatch.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(mechanicDirectory.findCandidates("CHAIN_REPAIR", "BICYCLE", "WORKSHOP")).thenReturn(List.of(workshop));
+
+        DispatchMatch dispatch = facade.process(
+                new DispatchCommand(assistanceId, "CHAIN_REPAIR", -34.6037, -58.3816, "BICYCLE", "WORKSHOP"));
+
+        assertThat(dispatch.getStatus()).isEqualTo(DispatchStatus.OFFERED);
+        verify(mechanicDirectory, never()).findCandidates("CHAIN_REPAIR", "BICYCLE");
+    }
+
     private DispatchMatch offered(Instant expiresAt) {
         return DispatchMatch.offered(assistanceId, "CHAIN_REPAIR", "BICYCLE", -34.6037, -58.3816, NOW, expiresAt);
     }
