@@ -39,12 +39,14 @@ class DispatchFacadeTest {
     private final DispatchOfferRepository offerRepository = mock(DispatchOfferRepository.class);
     private final MechanicDirectory mechanicDirectory = mock(MechanicDirectory.class);
     private final AssistanceAssignmentPort assignmentPort = mock(AssistanceAssignmentPort.class);
+    private final DispatchEventPublisher eventPublisher = mock(DispatchEventPublisher.class);
     private final DispatchFacade facade = new DispatchFacade(
             repository,
             offerRepository,
             mechanicDirectory,
             new NearestQualifiedMechanicStrategy(),
             assignmentPort,
+            eventPublisher,
             new OfferPolicy(2, Duration.ofMinutes(2)),
             Clock.fixed(NOW, ZoneOffset.UTC)
     );
@@ -72,6 +74,7 @@ class DispatchFacadeTest {
                         org.assertj.core.groups.Tuple.tuple(near.id(), 1),
                         org.assertj.core.groups.Tuple.tuple(far.id(), 2)
                 );
+        verify(eventPublisher).offered(dispatch, 2);
     }
 
     @Test

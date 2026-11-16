@@ -1,5 +1,6 @@
 package com.uade.mecanicosya.assistance.api;
 
+import com.uade.mecanicosya.assistance.application.AssistanceFacade;
 import com.uade.mecanicosya.assistance.application.ClientFacade;
 import com.uade.mecanicosya.assistance.application.DispatchCommand;
 import com.uade.mecanicosya.assistance.application.DispatchOutcome;
@@ -9,10 +10,13 @@ import com.uade.mecanicosya.assistance.domain.AssistanceRepository;
 import com.uade.mecanicosya.assistance.domain.Client;
 import com.uade.mecanicosya.assistance.domain.Vehicle;
 import com.uade.mecanicosya.assistance.domain.VehicleType;
+import com.uade.mecanicosya.shared.messaging.OutboxMessage;
+import com.uade.mecanicosya.shared.messaging.OutboxMessageRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -39,16 +43,25 @@ import java.util.regex.Pattern;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
  * El pedido de asistencia de punta a punta por HTTP, contra un Postgres real: la idempotencia depende de la
  * restricción única de la base. Si no hay Docker, el test se saltea.
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+        properties = {
+                // Kafka se prueba en AssistanceKafkaIntegrationTest; acá alcanza con ver qué queda en el outbox.
+                "messaging.outbox.relay.enabled=false",
+                "spring.kafka.listener.auto-startup=false",
+                "spring.kafka.admin.auto-create=false"
+        }
+)
 @Testcontainers(disabledWithoutDocker = true)
+// Cada clase levanta sus contenedores: el contexto se cierra con ellos para que no queden tareas programadas
+// intentando hablar con una base que ya no existe.
+@DirtiesContext
 class AssistanceRequestFlowTest {
 
     @Container
@@ -68,6 +81,12 @@ class AssistanceRequestFlowTest {
 
     @Autowired
     OfferExpiryJob offerExpiryJob;
+
+    @Autowired
+    AssistanceFacade assistanceFacade;
+
+    @Autowired
+    OutboxMessageRepository outbox;
 
     @LocalServerPort
     int port;
@@ -93,9 +112,9 @@ class AssistanceRequestFlowTest {
         assertThat(retry.statusCode()).isEqualTo(200);
         assertThat(retry.headers().firstValue("Idempotent-Replayed")).contains("true");
         assertThat(idOf(retry)).isEqualTo(idOf(first));
-        assertThat(first.body()).contains("\"status\":\"REQUESTED\"").contains("\"offersExpireAt\":\"");
+        assertThat(first.body()).contains("\"status\":\"REQUESTED\"");
         assertThat(repository.findByClient_IdOrderByCreatedAtDesc(client.getId())).hasSize(1);
-        verify(dispatchPort, times(1)).dispatch(any(DispatchCommand.class));
+        assertThat(eventsOf(idOf(first))).containsExactly("ASSISTANCE_REQUESTED");
     }
 
     @Test
@@ -121,6 +140,7 @@ class AssistanceRequestFlowTest {
         assertThat(statuses).containsOnlyOnce(201).containsOnly(201, 200);
         assertThat(ids).containsOnly(ids.getFirst());
         assertThat(repository.findByClient_IdOrderByCreatedAtDesc(client.getId())).hasSize(1);
+        assertThat(eventsOf(ids.getFirst())).containsExactly("ASSISTANCE_REQUESTED");
     }
 
     @Test
@@ -159,9 +179,8 @@ class AssistanceRequestFlowTest {
 
     @Test
     void anAssistanceNobodyTookBecomesUnmatchedAndCanBePublishedAgain() throws Exception {
-        when(dispatchPort.dispatch(any(DispatchCommand.class)))
-                .thenReturn(new DispatchOutcome.Offered(Instant.now().minusSeconds(1), 3));
         String id = idOf(create("key-expired", null));
+        assistanceFacade.awaitOffers(UUID.fromString(id), Instant.now().minusSeconds(1));
 
         offerExpiryJob.expireOffers();
         HttpResponse<String> unmatched = send(HttpRequest.newBuilder(uri("/api/assistances/" + id)).GET());
@@ -183,7 +202,7 @@ class AssistanceRequestFlowTest {
 
         assertThat(send(cancel).statusCode()).isEqualTo(200);
         assertThat(send(cancel).body()).contains("\"status\":\"CANCELLED\"");
-        verify(dispatchPort, times(1)).cancel(UUID.fromString(id));
+        assertThat(eventsOf(id)).containsExactly("ASSISTANCE_REQUESTED", "ASSISTANCE_CANCELLED");
     }
 
     @Test
@@ -204,6 +223,13 @@ class AssistanceRequestFlowTest {
                 .header("Content-Type", "application/json")
                 .header("Idempotency-Key", key)
                 .POST(HttpRequest.BodyPublishers.ofString(body(clientCreatedAt))));
+    }
+
+    private List<String> eventsOf(String assistanceId) {
+        return outbox.findByTopicOrderByIdAsc("assistance.events").stream()
+                .filter(message -> message.getMessageKey().equals(assistanceId))
+                .map(OutboxMessage::getEventType)
+                .toList();
     }
 
     private HttpResponse<String> cancelByKey(String key) throws IOException, InterruptedException {

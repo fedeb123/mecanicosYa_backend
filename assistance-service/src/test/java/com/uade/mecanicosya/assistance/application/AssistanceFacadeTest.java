@@ -36,19 +36,13 @@ class AssistanceFacadeTest {
     private final ClientFacade clientFacade = mock(ClientFacade.class);
     private final List<Object> publishedEvents = new ArrayList<>();
     private final List<String> sentRatings = new ArrayList<>();
-    private RuntimeException mechanicServiceFailure;
     private final AssistanceFacade facade = new AssistanceFacade(
             repository,
             mock(StatusChangeRepository.class),
             clientFacade,
             new AssistanceFactory(),
             publishedEvents::add,
-            (mechanicId, assistanceId, score) -> {
-                if (mechanicServiceFailure != null) {
-                    throw mechanicServiceFailure;
-                }
-                sentRatings.add(mechanicId + "/" + assistanceId + "/" + score);
-            },
+            (mechanicId, assistanceId, score) -> sentRatings.add(mechanicId + "/" + assistanceId + "/" + score),
             new RequestPolicy(Duration.ofMinutes(15), Duration.ofMinutes(5)),
             Clock.fixed(NOW, ZoneOffset.UTC)
     );
@@ -167,16 +161,6 @@ class AssistanceFacadeTest {
         assertThat(rated.getRatingComment()).isEqualTo("Llegó rápido");
         assertThat(sentRatings).containsExactly(mechanicId + "/" + completed.getId() + "/4");
         verify(repository).save(completed);
-    }
-
-    @Test
-    void whenMechanicServiceIsDownTheRatingIsNotSaved() {
-        AssistanceRequest completed = completedAssistance(UUID.randomUUID());
-        mechanicServiceFailure = new MechanicServiceUnavailableException("down", null);
-
-        assertThatThrownBy(() -> facade.rate(completed.getId(), 5, null))
-                .isInstanceOf(MechanicServiceUnavailableException.class);
-        verify(repository, never()).save(any(AssistanceRequest.class));
     }
 
     @Test

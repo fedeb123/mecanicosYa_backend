@@ -10,6 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.testcontainers.junit.jupiter.Container;
@@ -43,9 +44,15 @@ import static org.mockito.Mockito.when;
  */
 @SpringBootTest(properties = {
         "clients.assistance-service.base-url=http://localhost:1",
-        "dispatch.offers.max-offers=5"
+        "dispatch.offers.max-offers=5",
+        "messaging.outbox.relay.enabled=false",
+        "spring.kafka.listener.auto-startup=false",
+        "spring.kafka.admin.auto-create=false"
 })
 @Testcontainers(disabledWithoutDocker = true)
+// Cada clase levanta sus contenedores: el contexto se cierra con ellos para que no queden tareas programadas
+// intentando hablar con una base que ya no existe.
+@DirtiesContext
 class OfferAcceptanceConcurrencyTest {
 
     @Container

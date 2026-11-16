@@ -16,14 +16,18 @@ spring:
     open-in-view: false
     hibernate:
       ddl-auto: update
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      acks: all
+    consumer:
+      group-id: ${spring.application.name}
+      auto-offset-reset: earliest
 
 clients:
   dispatch-service:
     base-url: ${DISPATCH_SERVICE_URL:http://localhost:8083}
     timeout: ${DISPATCH_SERVICE_TIMEOUT:5s}
-  mechanic-service:
-    base-url: ${MECHANIC_SERVICE_URL:http://localhost:8081}
-    timeout: ${MECHANIC_SERVICE_TIMEOUT:3s}
 
 assistance:
   requests:

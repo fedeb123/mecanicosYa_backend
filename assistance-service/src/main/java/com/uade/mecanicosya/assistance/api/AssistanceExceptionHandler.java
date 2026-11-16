@@ -5,8 +5,6 @@ import com.uade.mecanicosya.assistance.application.ClientNotFoundException;
 import com.uade.mecanicosya.assistance.application.DispatchFailedException;
 import com.uade.mecanicosya.assistance.application.DispatchUnavailableException;
 import com.uade.mecanicosya.assistance.application.DuplicateClientException;
-import com.uade.mecanicosya.assistance.application.MechanicServiceFailedException;
-import com.uade.mecanicosya.assistance.application.MechanicServiceUnavailableException;
 import com.uade.mecanicosya.assistance.application.RequestExpiredException;
 import com.uade.mecanicosya.assistance.application.VehicleNotFoundException;
 import com.uade.mecanicosya.assistance.domain.AssistanceAlreadyRatedException;
@@ -112,25 +110,6 @@ public class AssistanceExceptionHandler {
         LOGGER.warn("dispatch-service answered with an error", exception);
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_GATEWAY, exception.getMessage());
         problem.setTitle("Dispatch service error");
-        return problem;
-    }
-
-    @ExceptionHandler(MechanicServiceUnavailableException.class)
-    ProblemDetail mechanicServiceUnavailable(MechanicServiceUnavailableException exception) {
-        LOGGER.warn("mechanic-service is not reachable", exception);
-        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
-                HttpStatus.SERVICE_UNAVAILABLE,
-                "mechanic-service is not available; the rating was not saved and can be sent again"
-        );
-        problem.setTitle("Mechanic service unavailable");
-        return problem;
-    }
-
-    @ExceptionHandler(MechanicServiceFailedException.class)
-    ProblemDetail mechanicServiceFailed(MechanicServiceFailedException exception) {
-        LOGGER.warn("mechanic-service answered with an error", exception);
-        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_GATEWAY, exception.getMessage());
-        problem.setTitle("Mechanic service error");
         return problem;
     }
 }

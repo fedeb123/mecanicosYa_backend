@@ -1,7 +1,6 @@
 package com.uade.mecanicosya.assistance.application;
 
 import com.uade.mecanicosya.assistance.domain.AssistanceRequest;
-import com.uade.mecanicosya.assistance.domain.AssistanceStatus;
 import com.uade.mecanicosya.assistance.domain.InvalidStatusTransitionException;
 import com.uade.mecanicosya.assistance.domain.Client;
 import com.uade.mecanicosya.assistance.domain.Vehicle;
@@ -14,7 +13,6 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -100,40 +98,6 @@ class AssistanceDispatchCoordinatorTest {
     }
 
     @Test
-    void cancellingWithdrawsTheOffersEvenIfDispatchIsDown() {
-        List<UUID> cancelled = new ArrayList<>();
-        AssistanceDispatchCoordinator coordinator = new AssistanceDispatchCoordinator(facade, new DispatchPort() {
-            @Override
-            public DispatchOutcome dispatch(DispatchCommand command) {
-                throw new AssertionError("not expected");
-            }
-
-            @Override
-            public void cancel(UUID assistanceId) {
-                cancelled.add(assistanceId);
-                throw new DispatchUnavailableException("down", null);
-            }
-        });
-
-        assertThatCode(() -> coordinator.onStatusChanged(AssistanceStatusChangedEvent.of(
-                assistance.getId(), AssistanceStatus.REQUESTED, AssistanceStatus.CANCELLED
-        ))).doesNotThrowAnyException();
-        assertThat(cancelled).containsExactly(assistance.getId());
-    }
-
-    @Test
-    void theEventListenerDoesNotFailWhenDispatchIsUnavailable() {
-        when(facade.find(assistance.getId())).thenReturn(assistance);
-        AssistanceDispatchCoordinator coordinator = coordinatorFailingWith(
-                new DispatchUnavailableException("down", null)
-        );
-
-        assertThatCode(() -> coordinator.onAssistanceRequested(AssistanceRequestedEvent.from(assistance)))
-                .doesNotThrowAnyException();
-        verify(facade, never()).applyMatch(any(), any());
-    }
-
-    @Test
     void theManualRetryReportsThatDispatchIsUnavailable() {
         when(facade.find(assistance.getId())).thenReturn(assistance);
         AssistanceDispatchCoordinator coordinator = coordinatorFailingWith(
@@ -158,16 +122,7 @@ class AssistanceDispatchCoordinatorTest {
     }
 
     private static DispatchPort port(java.util.function.Function<DispatchCommand, DispatchOutcome> dispatch) {
-        return new DispatchPort() {
-            @Override
-            public DispatchOutcome dispatch(DispatchCommand command) {
-                return dispatch.apply(command);
-            }
-
-            @Override
-            public void cancel(UUID assistanceId) {
-            }
-        };
+        return dispatch::apply;
     }
 
     private static AssistanceRequest newAssistance() {
