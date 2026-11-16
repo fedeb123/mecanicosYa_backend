@@ -26,6 +26,12 @@ spring:
     consumer:
       group-id: ${spring.application.name}
       auto-offset-reset: earliest
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # La clave pública de identity-service, que firma los tokens.
+          jwk-set-uri: ${IDENTITY_JWKS_URI:http://localhost:8084/.well-known/jwks.json}
 
 management:
   endpoints:
@@ -36,6 +42,11 @@ management:
     health:
       probes:
         enabled: true
+
+mecanicosya:
+  api:
+    # Lo que muestran Swagger y el contrato exportado en docs/contratos/.
+    description: "Perfiles de mecánicos, habilidades, tipos de vehículo, disponibilidad y ubicación, aprobación por un admin y calificaciones. Publica mechanic.events y consume assistance.events."
 
 springdoc:
   swagger-ui:

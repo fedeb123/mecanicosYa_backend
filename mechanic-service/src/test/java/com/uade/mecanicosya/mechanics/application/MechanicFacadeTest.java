@@ -13,6 +13,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -23,8 +24,11 @@ class MechanicFacadeTest {
 
     private final MechanicRepository repository = mock(MechanicRepository.class);
     private final MechanicRatingRepository ratingRepository = mock(MechanicRatingRepository.class);
-    private final MechanicFacade facade = new MechanicFacade(repository, new MechanicFactory(), ratingRepository);
+    private final MechanicEventPublisher eventPublisher = mock(MechanicEventPublisher.class);
+    private final MechanicFacade facade = new MechanicFacade(
+            repository, new MechanicFactory(), ratingRepository, eventPublisher);
     private final Mechanic mechanic = new MechanicFactory().create(
+            UUID.randomUUID(),
             "Ada Mecánica",
             "ada@example.com",
             -34.6037,
@@ -54,6 +58,26 @@ class MechanicFacadeTest {
 
         assertThat(unchanged.getRatingCount()).isZero();
         verify(ratingRepository, never()).save(any(MechanicRating.class));
+        verify(repository, never()).save(any(Mechanic.class));
+    }
+
+    @Test
+    void approvingPublishesTheNewStatus() {
+        when(repository.findById(mechanic.getId())).thenReturn(Optional.of(mechanic));
+        when(repository.save(mechanic)).thenReturn(mechanic);
+
+        Mechanic approved = facade.approve(mechanic.getId());
+
+        assertThat(approved.isApproved()).isTrue();
+        verify(eventPublisher).verificationChanged(mechanic);
+    }
+
+    @Test
+    void anAccountHasASingleProfile() {
+        when(repository.existsById(mechanic.getId())).thenReturn(true);
+
+        assertThatThrownBy(() -> facade.register(mechanic.getId(), "Ada", "ada@example.com", 0, 0,
+                Set.of("CHAIN_REPAIR"), null)).isInstanceOf(MechanicAlreadyRegisteredException.class);
         verify(repository, never()).save(any(Mechanic.class));
     }
 }

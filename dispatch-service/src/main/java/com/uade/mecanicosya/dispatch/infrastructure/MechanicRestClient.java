@@ -4,6 +4,7 @@ import com.uade.mecanicosya.dispatch.application.MechanicDirectory;
 import com.uade.mecanicosya.dispatch.application.MechanicDirectoryUnavailableException;
 import com.uade.mecanicosya.dispatch.domain.MechanicCandidate;
 import com.uade.mecanicosya.shared.observability.CorrelationIdPropagator;
+import com.uade.mecanicosya.shared.security.ServiceTokenInterceptor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
@@ -24,7 +25,8 @@ public class MechanicRestClient implements MechanicDirectory {
     public MechanicRestClient(
             RestClient.Builder builder,
             @Value("${clients.mechanic-service.base-url}") String baseUrl,
-            @Value("${clients.mechanic-service.timeout:3s}") Duration timeout
+            @Value("${clients.mechanic-service.timeout:3s}") Duration timeout,
+            ServiceTokenInterceptor serviceToken
     ) {
         HttpClient httpClient = HttpClient.newBuilder()
                 .version(HttpClient.Version.HTTP_1_1)
@@ -36,6 +38,7 @@ public class MechanicRestClient implements MechanicDirectory {
                 .baseUrl(baseUrl)
                 .requestFactory(requestFactory)
                 .requestInterceptor(new CorrelationIdPropagator())
+                .requestInterceptor(serviceToken)
                 .build();
     }
 

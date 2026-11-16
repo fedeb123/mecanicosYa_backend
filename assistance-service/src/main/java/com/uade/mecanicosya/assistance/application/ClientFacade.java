@@ -24,12 +24,16 @@ public class ClientFacade {
         this.vehicleRepository = vehicleRepository;
     }
 
+    /** El perfil del repartidor de la cuenta {@code id}: el id del cliente es el de su cuenta en identity-service. */
     @Transactional
-    public Client register(String fullName, String phone, String email) {
-        if (email != null && clientRepository.existsByEmail(email.trim().toLowerCase(Locale.ROOT))) {
-            throw new DuplicateClientException(email.trim());
+    public Client register(UUID id, String fullName, String phone, String email) {
+        if (clientRepository.existsById(id)) {
+            throw new DuplicateClientException("The account " + id + " already has a client profile");
         }
-        return clientRepository.save(new Client(UUID.randomUUID(), fullName, phone, email, Instant.now()));
+        if (email != null && clientRepository.existsByEmail(email.trim().toLowerCase(Locale.ROOT))) {
+            throw new DuplicateClientException("A client with email " + email.trim() + " already exists");
+        }
+        return clientRepository.save(new Client(id, fullName, phone, email, Instant.now()));
     }
 
     @Transactional(readOnly = true)

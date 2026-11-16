@@ -4,6 +4,7 @@ import com.uade.mecanicosya.dispatch.application.AssistanceAssignmentPort;
 import com.uade.mecanicosya.dispatch.application.AssistanceClosedException;
 import com.uade.mecanicosya.dispatch.application.AssistanceServiceUnavailableException;
 import com.uade.mecanicosya.shared.observability.CorrelationIdPropagator;
+import com.uade.mecanicosya.shared.security.ServiceTokenInterceptor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
@@ -24,7 +25,8 @@ public class AssistanceRestClient implements AssistanceAssignmentPort {
     public AssistanceRestClient(
             RestClient.Builder builder,
             @Value("${clients.assistance-service.base-url}") String baseUrl,
-            @Value("${clients.assistance-service.timeout:3s}") Duration timeout
+            @Value("${clients.assistance-service.timeout:3s}") Duration timeout,
+            ServiceTokenInterceptor serviceToken
     ) {
         HttpClient httpClient = HttpClient.newBuilder()
                 .version(HttpClient.Version.HTTP_1_1)
@@ -36,6 +38,7 @@ public class AssistanceRestClient implements AssistanceAssignmentPort {
                 .baseUrl(baseUrl)
                 .requestFactory(requestFactory)
                 .requestInterceptor(new CorrelationIdPropagator())
+                .requestInterceptor(serviceToken)
                 .build();
     }
 

@@ -2,9 +2,9 @@ package com.uade.mecanicosya.mechanics.api;
 
 import com.uade.mecanicosya.mechanics.domain.Mechanic;
 import com.uade.mecanicosya.mechanics.domain.VehicleType;
+import com.uade.mecanicosya.mechanics.domain.VerificationStatus;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -19,9 +19,9 @@ public final class MechanicDtos {
     private MechanicDtos() {
     }
 
+    /** El id y el email salen del token del mecánico. */
     public record CreateMechanicRequest(
             @NotBlank String name,
-            @NotBlank @Email String email,
             @DecimalMin("-90.0") @DecimalMax("90.0") double latitude,
             @DecimalMin("-180.0") @DecimalMax("180.0") double longitude,
             @NotEmpty Set<@NotBlank String> skills,
@@ -52,7 +52,8 @@ public final class MechanicDtos {
             double rating,
             int ratingCount,
             Set<String> skills,
-            Set<VehicleType> vehicleTypes
+            Set<VehicleType> vehicleTypes,
+            VerificationStatus verificationStatus
     ) {
         public static MechanicResponse from(Mechanic mechanic) {
             return new MechanicResponse(
@@ -65,7 +66,8 @@ public final class MechanicDtos {
                     mechanic.getRating(),
                     mechanic.getRatingCount(),
                     mechanic.getSkills(),
-                    mechanic.getVehicleTypes()
+                    mechanic.getVehicleTypes(),
+                    mechanic.getVerificationStatus()
             );
         }
     }

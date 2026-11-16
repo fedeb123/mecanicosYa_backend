@@ -6,6 +6,8 @@ import com.uade.mecanicosya.mechanics.api.MechanicDtos.CreateMechanicRequest;
 import com.uade.mecanicosya.mechanics.api.MechanicDtos.MechanicResponse;
 import com.uade.mecanicosya.mechanics.api.MechanicDtos.RatingRequest;
 import com.uade.mecanicosya.mechanics.domain.VehicleType;
+import com.uade.mecanicosya.mechanics.domain.VerificationStatus;
+import com.uade.mecanicosya.shared.security.CurrentUser;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -35,17 +37,36 @@ public class MechanicController {
     }
 
     @PostMapping
-    @Operation(summary = "Register a mechanic (vehicleTypes defaults to BICYCLE)")
-    public ResponseEntity<MechanicResponse> register(@Valid @RequestBody CreateMechanicRequest request) {
+    @Operation(summary = "Create the profile of the logged-in mechanic (vehicleTypes defaults to BICYCLE)",
+            description = "Role MECHANIC. The id and the email come from the token. The profile starts "
+                    + "PENDING_VERIFICATION until an admin approves it.")
+    public ResponseEntity<MechanicResponse> register(
+            CurrentUser user,
+            @Valid @RequestBody CreateMechanicRequest request
+    ) {
         MechanicResponse response = MechanicResponse.from(facade.register(
+                user.id(),
                 request.name(),
-                request.email(),
+                user.email(),
                 request.latitude(),
                 request.longitude(),
                 request.skills(),
                 request.vehicleTypes()
         ));
         return ResponseEntity.created(URI.create("/api/mechanics/" + response.id())).body(response);
+    }
+
+    @GetMapping
+    @Operation(summary = "List mechanics, optionally by verification status (role ADMIN)")
+    public List<MechanicResponse> list(@RequestParam(required = false) VerificationStatus verificationStatus) {
+        return facade.list(verificationStatus).stream().map(MechanicResponse::from).toList();
+    }
+
+    @PostMapping("/{id}/approve")
+    @Operation(summary = "Approve a pending mechanic so they can go available and take offers (role ADMIN)",
+            description = "The mechanic's next token (login or refresh) says APPROVED.")
+    public MechanicResponse approve(@PathVariable UUID id) {
+        return MechanicResponse.from(facade.approve(id));
     }
 
     @GetMapping("/{id}")
@@ -55,11 +76,14 @@ public class MechanicController {
     }
 
     @PatchMapping("/{id}/availability")
-    @Operation(summary = "Update availability and current location")
+    @Operation(summary = "Update availability and current location (the mechanic themself)",
+            description = "403 while the mechanic is pending verification.")
     public MechanicResponse updateAvailability(
+            CurrentUser user,
             @PathVariable UUID id,
             @Valid @RequestBody AvailabilityRequest request
     ) {
+        user.requireSelfOrPrivileged(id);
         return MechanicResponse.from(facade.changeAvailability(
                 id,
                 request.available(),
@@ -69,13 +93,15 @@ public class MechanicController {
     }
 
     @PostMapping("/{id}/ratings")
-    @Operation(summary = "Add the rating of a completed assistance to the mechanic's average (idempotent per assistance)")
+    @Operation(summary = "Add the rating of a completed assistance to the mechanic's average (idempotent per assistance; "
+            + "role SERVICE or ADMIN, the ratings normally arrive by Kafka)")
     public MechanicResponse rate(@PathVariable UUID id, @Valid @RequestBody RatingRequest request) {
         return MechanicResponse.from(facade.rate(id, request.assistanceId(), request.score()));
     }
 
     @GetMapping("/candidates")
-    @Operation(summary = "Find available mechanics with a required skill, optionally for a vehicle type")
+    @Operation(summary = "Find available, approved mechanics with a required skill, optionally for a vehicle type "
+            + "(role SERVICE or ADMIN)")
     public List<MechanicResponse> findCandidates(
             @RequestParam String skill,
             @RequestParam(required = false) VehicleType vehicleType

@@ -22,8 +22,9 @@ public final class AssistanceDtos {
     private AssistanceDtos() {
     }
 
+    /** {@code clientId} es opcional: sale del token. Si viene, tiene que ser el del token. */
     public record CreateAssistanceRequest(
-            @NotNull UUID clientId,
+            UUID clientId,
             @NotNull UUID vehicleId,
             @NotBlank @Size(max = 1000) String description,
             @Size(max = 80) String problemType,

@@ -12,10 +12,15 @@ import com.uade.mecanicosya.assistance.domain.Vehicle;
 import com.uade.mecanicosya.assistance.domain.VehicleType;
 import com.uade.mecanicosya.shared.messaging.OutboxMessage;
 import com.uade.mecanicosya.shared.messaging.OutboxMessageRepository;
+import com.uade.mecanicosya.shared.security.TestJwt;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
@@ -58,6 +63,7 @@ import static org.mockito.Mockito.when;
                 "spring.kafka.admin.auto-create=false"
         }
 )
+@Import(AssistanceRequestFlowTest.Tokens.class)
 @Testcontainers(disabledWithoutDocker = true)
 // Cada clase levanta sus contenedores: el contexto se cierra con ellos para que no queden tareas programadas
 // intentando hablar con una base que ya no existe.
@@ -94,11 +100,21 @@ class AssistanceRequestFlowTest {
     private final HttpClient http = HttpClient.newHttpClient();
     private Client client;
     private Vehicle vehicle;
+    private String rider;
+
+    @TestConfiguration
+    static class Tokens {
+        @Bean
+        JwtDecoder jwtDecoder() {
+            return TestJwt.decoder();
+        }
+    }
 
     @BeforeEach
     void aRiderWithABike() {
-        client = clientFacade.register("Rider", "+54 11 5555-0000", UUID.randomUUID() + "@example.com");
+        client = clientFacade.register(UUID.randomUUID(), "Rider", "+54 11 5555-0000", UUID.randomUUID() + "@example.com");
         vehicle = clientFacade.registerVehicle(client.getId(), VehicleType.BICYCLE, "Trek", "FX 2", null, null);
+        rider = TestJwt.rider(client.getId());
         when(dispatchPort.dispatch(any(DispatchCommand.class)))
                 .thenReturn(new DispatchOutcome.Offered(Instant.now().plus(Duration.ofMinutes(2)), 3));
     }
@@ -173,7 +189,8 @@ class AssistanceRequestFlowTest {
         assertThat(repeated.body()).contains("\"status\":\"MATCHED\"").contains(mechanicId.toString());
         assertThat(assign(id, UUID.randomUUID()).statusCode()).isEqualTo(409);
 
-        HttpResponse<String> jobs = send(HttpRequest.newBuilder(uri("/api/assistances?mechanicId=" + mechanicId)).GET());
+        HttpResponse<String> jobs = send(HttpRequest.newBuilder(uri("/api/assistances")).GET(),
+                TestJwt.approvedMechanic(mechanicId));
         assertThat(jobs.body()).contains(id);
     }
 
@@ -257,6 +274,61 @@ class AssistanceRequestFlowTest {
         assertThat(repository.findByClient_IdOrderByCreatedAtDesc(client.getId())).isEmpty();
     }
 
+    @Test
+    void anotherRiderCannotSeeCancelOrRequestInTheNameOfTheClient() throws Exception {
+        String id = idOf(create("key-mine", null));
+        String other = TestJwt.rider(UUID.randomUUID());
+
+        assertThat(send(HttpRequest.newBuilder(uri("/api/assistances/" + id)).GET(), other).statusCode())
+                .isEqualTo(403);
+        assertThat(send(HttpRequest.newBuilder(uri("/api/assistances/" + id + "/cancel"))
+                .POST(HttpRequest.BodyPublishers.noBody()), other).statusCode()).isEqualTo(403);
+        assertThat(send(HttpRequest.newBuilder(uri("/api/assistances"))
+                .header("Content-Type", "application/json")
+                .header("Idempotency-Key", "key-impostor")
+                .POST(HttpRequest.BodyPublishers.ofString(body(null))), other).statusCode()).isEqualTo(403);
+        assertThat(send(HttpRequest.newBuilder(uri("/api/clients/" + client.getId() + "/vehicles")).GET(), other)
+                .statusCode()).isEqualTo(403);
+        assertThat(send(HttpRequest.newBuilder(uri("/api/assistances/" + id)).GET()).statusCode()).isEqualTo(200);
+    }
+
+    @Test
+    void onlyTheAssignedMechanicSeesAndWorksTheJob() throws Exception {
+        String id = idOf(create("key-job", null));
+        UUID mechanicId = UUID.randomUUID();
+        assign(id, mechanicId);
+        String assigned = TestJwt.approvedMechanic(mechanicId);
+        String another = TestJwt.approvedMechanic(UUID.randomUUID());
+
+        assertThat(send(HttpRequest.newBuilder(uri("/api/assistances/" + id)).GET(), another).statusCode())
+                .isEqualTo(403);
+        assertThat(send(HttpRequest.newBuilder(uri("/api/assistances/" + id + "/start"))
+                .POST(HttpRequest.BodyPublishers.noBody()), another).statusCode()).isEqualTo(403);
+        assertThat(send(HttpRequest.newBuilder(uri("/api/assistances/" + id + "/start"))
+                .POST(HttpRequest.BodyPublishers.noBody())).statusCode()).as("the rider").isEqualTo(403);
+        assertThat(send(HttpRequest.newBuilder(uri("/api/assistances/" + id)).GET(), assigned).statusCode())
+                .isEqualTo(200);
+        assertThat(send(HttpRequest.newBuilder(uri("/api/assistances/" + id + "/start"))
+                .POST(HttpRequest.BodyPublishers.noBody()), assigned).body()).contains("\"status\":\"IN_PROGRESS\"");
+    }
+
+    @Test
+    void eachEndpointChecksTheRole() throws Exception {
+        String id = idOf(create("key-roles", null));
+
+        assertThat(send(HttpRequest.newBuilder(uri("/api/assistances/" + id)).GET(), null).statusCode())
+                .isEqualTo(401);
+        assertThat(send(HttpRequest.newBuilder(uri("/api/assistances"))
+                .header("Content-Type", "application/json")
+                .header("Idempotency-Key", "key-mechanic")
+                .POST(HttpRequest.BodyPublishers.ofString(body(null))), TestJwt.approvedMechanic(UUID.randomUUID()))
+                .statusCode()).isEqualTo(403);
+        assertThat(send(HttpRequest.newBuilder(uri("/api/assistances/" + id + "/assign"))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString("{\"mechanicId\":\"" + UUID.randomUUID() + "\"}")))
+                .statusCode()).as("a rider cannot assign").isEqualTo(403);
+    }
+
     private HttpResponse<String> create(String key, Instant clientCreatedAt) throws IOException, InterruptedException {
         return send(HttpRequest.newBuilder(uri("/api/assistances"))
                 .header("Content-Type", "application/json")
@@ -272,7 +344,7 @@ class AssistanceRequestFlowTest {
     }
 
     private HttpResponse<String> cancelByKey(String key) throws IOException, InterruptedException {
-        return send(HttpRequest.newBuilder(uri("/api/assistances/cancel-by-key?clientId=" + client.getId()))
+        return send(HttpRequest.newBuilder(uri("/api/assistances/cancel-by-key"))
                 .header("Idempotency-Key", key)
                 .POST(HttpRequest.BodyPublishers.noBody()));
     }
@@ -280,7 +352,8 @@ class AssistanceRequestFlowTest {
     private HttpResponse<String> assign(String id, UUID mechanicId) throws IOException, InterruptedException {
         return send(HttpRequest.newBuilder(uri("/api/assistances/" + id + "/assign"))
                 .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString("{\"mechanicId\":\"" + mechanicId + "\"}")));
+                .POST(HttpRequest.BodyPublishers.ofString("{\"mechanicId\":\"" + mechanicId + "\"}")),
+                TestJwt.service("dispatch-service"));
     }
 
     private String body(Instant clientCreatedAt) {
@@ -294,7 +367,15 @@ class AssistanceRequestFlowTest {
         );
     }
 
+    /** Por defecto, como el repartidor del pedido. */
     private HttpResponse<String> send(HttpRequest.Builder request) throws IOException, InterruptedException {
+        return send(request, rider);
+    }
+
+    private HttpResponse<String> send(HttpRequest.Builder request, String token) throws IOException, InterruptedException {
+        if (token != null) {
+            request.header("Authorization", "Bearer " + token);
+        }
         return http.send(request.build(), HttpResponse.BodyHandlers.ofString());
     }
 

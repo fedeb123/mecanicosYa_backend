@@ -1,0 +1,58 @@
+server:
+  port: ${SERVER_PORT:8084}
+
+spring:
+  threads:
+    virtual:
+      enabled: true
+  application:
+    name: identity-service
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/identity_db}
+    username: ${DB_USERNAME:identity_user}
+    password: ${DB_PASSWORD:identity_pass}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: update
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: ${spring.application.name}
+      auto-offset-reset: earliest
+
+identity:
+  issuer: mecanicosya-identity
+  access-token-ttl: ${ACCESS_TOKEN_TTL:PT15M}
+  refresh-token-ttl: ${REFRESH_TOKEN_TTL:P30D}
+  # El admin inicial. Sin contraseña no se crea y nadie puede aprobar mecánicos.
+  admin:
+    email: ${ADMIN_EMAIL:}
+    password: ${ADMIN_PASSWORD:}
+  # Los servicios que llaman a otros por REST. Un secreto vacío deshabilita ese servicio.
+  service-clients:
+    "[assistance-service]": ${ASSISTANCE_SERVICE_SECRET:}
+    "[dispatch-service]": ${DISPATCH_SERVICE_SECRET:}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+mecanicosya:
+  api:
+    # Lo que muestran Swagger y el contrato exportado en docs/contratos/.
+    description: "Cuentas de repartidor, mecánico y admin: alta, login, refresh y logout con JWT, token de servicio y la clave pública (JWKS) con la que los otros servicios validan los tokens. Consume mechanic.events."
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+logging:
+  pattern:
+    level: "%5p [${spring.application.name:},%X{correlationId:-}]"

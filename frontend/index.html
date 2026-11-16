@@ -13,6 +13,7 @@
     <p class="subtitle">Herramienta para probar los microservicios a mano. No es la app final.</p>
   </div>
   <div class="services" id="services">
+    <span class="service" data-service="identity">identity-service</span>
     <span class="service" data-service="mechanic">mechanic-service</span>
     <span class="service" data-service="assistance">assistance-service</span>
     <span class="service" data-service="dispatch">dispatch-service</span>
@@ -22,7 +23,8 @@
 </header>
 
 <nav class="tabs">
-  <button type="button" data-tab="mechanics" class="active">Mecánicos</button>
+  <button type="button" data-tab="accounts" class="active">Cuentas</button>
+  <button type="button" data-tab="mechanics">Mecánicos</button>
   <button type="button" data-tab="clients">Clientes y vehículos</button>
   <button type="button" data-tab="assistances">Asistencias</button>
   <button type="button" data-tab="demo">Demo rápida</button>
@@ -31,13 +33,58 @@
 <main>
   <div class="panels">
 
-    <!-- Mecánicos -->
-    <section class="panel active" data-panel="mechanics">
+    <!-- Cuentas -->
+    <section class="panel active" data-panel="accounts">
       <div class="card">
-        <h2>Alta de mecánico</h2>
-        <form id="form-mechanic">
-          <label>Nombre <input name="name" required value="Ada Mecánica"></label>
+        <h2>Registrarse</h2>
+        <form id="form-signup">
+          <label>Rol
+            <select name="role">
+              <option value="RIDER">Repartidor</option>
+              <option value="MECHANIC">Mecánico</option>
+            </select>
+          </label>
           <label>Email <input name="email" type="email" required></label>
+          <label>Contraseña <input name="password" type="password" required minlength="8" value="demo-pass-123"></label>
+          <button type="submit">Crear cuenta</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>Iniciar sesión</h2>
+        <form id="form-login">
+          <label>Email <input name="email" type="email" required></label>
+          <label>Contraseña <input name="password" type="password" required></label>
+          <button type="submit">Entrar</button>
+        </form>
+        <p class="hint">Viene cargado el admin que crea identity-service al arrancar (<code>ADMIN_EMAIL</code> y
+          <code>ADMIN_PASSWORD</code>). Es el único que aprueba mecánicos.</p>
+      </div>
+
+      <div class="card wide">
+        <h2>Mecánicos pendientes de validación</h2>
+        <p class="hint">Un mecánico nuevo no puede ponerse disponible ni aceptar ofertas hasta que el admin lo aprueba.
+          La aprobación llega por Kafka a identity-service y el próximo token del mecánico la trae.</p>
+        <button type="button" id="btn-pending">Ver pendientes</button>
+        <div id="pending-result"></div>
+      </div>
+
+      <div class="card wide">
+        <h2>Sesiones en este navegador</h2>
+        <p class="hint">Cada pedido de la consola sale con el token de quien lo haría en la app: el repartidor, el
+          mecánico o el admin. El log de la derecha muestra con qué cuenta se hizo.</p>
+        <div id="accounts-message"></div>
+        <div id="accounts-result"></div>
+      </div>
+    </section>
+
+    <!-- Mecánicos -->
+    <section class="panel" data-panel="mechanics">
+      <div class="card">
+        <h2>Perfil de mecánico</h2>
+        <form id="form-mechanic">
+          <label>Cuenta <select name="accountId" class="select-mechanic-account" required></select></label>
+          <label>Nombre <input name="name" required value="Ada Mecánica"></label>
           <div class="row">
             <label>Ubicación <select class="location-preset" data-lat="latitude" data-lon="longitude"></select></label>
             <label>Latitud <input name="latitude" type="number" step="any" required value="-34.6038"></label>
@@ -50,7 +97,7 @@
             <label class="inline"><input type="checkbox" name="vehicleTypes" value="E_BIKE"> Bici eléctrica</label>
             <label class="inline"><input type="checkbox" name="vehicleTypes" value="MOTORCYCLE"> Moto</label>
           </fieldset>
-          <button type="submit">Registrar mecánico</button>
+          <button type="submit">Crear perfil</button>
         </form>
       </div>
 
@@ -72,7 +119,7 @@
       </div>
 
       <div class="card wide">
-        <h2>Buscar candidatos</h2>
+        <h2>Buscar candidatos (como admin)</h2>
         <form id="form-candidates" class="row">
           <label>Habilidad <input name="skill" required value="CHAIN_REPAIR"></label>
           <label>Tipo de vehículo
@@ -92,12 +139,12 @@
     <!-- Clientes -->
     <section class="panel" data-panel="clients">
       <div class="card">
-        <h2>Alta de cliente (repartidor)</h2>
+        <h2>Perfil de repartidor</h2>
         <form id="form-client">
+          <label>Cuenta <select name="accountId" class="select-rider-account" required></select></label>
           <label>Nombre completo <input name="fullName" required value="Repartidor Demo"></label>
           <label>Teléfono <input name="phone" required value="1155550000"></label>
-          <label>Email <input name="email" type="email" required></label>
-          <button type="submit">Registrar cliente</button>
+          <button type="submit">Crear perfil</button>
         </form>
       </div>
 
@@ -185,8 +232,9 @@
     <section class="panel" data-panel="demo">
       <div class="card wide">
         <h2>Demo rápida</h2>
-        <p>Hace el mismo recorrido que <code>scripts/demo.sh</code>: registra tres mecánicos y los pone disponibles,
-          registra un cliente con su bicicleta y pide una asistencia escribiendo sólo el problema: la clasificación
+        <p>Hace el mismo recorrido que <code>scripts/demo.sh</code>: el admin inicia sesión, tres mecánicos se
+          registran y quedan pendientes (uno intenta ponerse disponible y recibe 403), el admin los aprueba y se ponen
+          disponibles. Un repartidor se registra con su bicicleta y pide una asistencia escribiendo sólo el problema: la clasificación
           deduce que es de cadena y qué tan urgente es. El pedido viaja por Kafka a
           dispatch-service, que se lo ofrece a los dos que arreglan bicicletas; los dos aceptan al mismo tiempo y uno solo se lo queda; el otro recibe 409. Al final
           los tres se desconectan para no recibir los pedidos de la próxima corrida.
@@ -196,9 +244,8 @@
       </div>
       <div class="card wide">
         <h2>Datos guardados en este navegador</h2>
-        <p>Los servicios no tienen endpoints de listado, así que el front recuerda los ids que fue creando
-          para llenar los desplegables.</p>
-        <button type="button" class="ghost danger" id="btn-clear-store">Olvidar ids guardados</button>
+        <p>El front recuerda las cuentas con sus tokens y los ids que fue creando para llenar los desplegables.</p>
+        <button type="button" class="ghost danger" id="btn-clear-store">Olvidar cuentas e ids guardados</button>
       </div>
     </section>
   </div>
