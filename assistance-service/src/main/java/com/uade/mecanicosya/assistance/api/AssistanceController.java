@@ -82,7 +82,8 @@ public class AssistanceController {
                     request.latitude(),
                     request.longitude(),
                     idempotencyKey,
-                    request.clientCreatedAt()
+                    request.clientCreatedAt(),
+                    request.mechanicKind()
             );
         } catch (DataIntegrityViolationException exception) {
             // Dos reintentos simultáneos con la misma clave: la restricción única dejó pasar uno solo.

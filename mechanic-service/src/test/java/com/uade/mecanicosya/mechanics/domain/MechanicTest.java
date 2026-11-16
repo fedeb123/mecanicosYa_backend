@@ -21,6 +21,15 @@ class MechanicTest {
     );
 
     @Test
+    void thePhoneIsOptionalAndTrimmed() {
+        assertThat(mechanic.getPhone()).isNull();
+        mechanic.changePhone(" 11 5555 0202 ");
+        assertThat(mechanic.getPhone()).isEqualTo("11 5555 0202");
+        mechanic.changePhone("  ");
+        assertThat(mechanic.getPhone()).isNull();
+    }
+
+    @Test
     void startsWithFiveAndNoRatings() {
         assertThat(mechanic.getRating()).isEqualTo(5.0);
         assertThat(mechanic.getRatingCount()).isZero();

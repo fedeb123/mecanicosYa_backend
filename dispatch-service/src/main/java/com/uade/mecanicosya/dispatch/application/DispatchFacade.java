@@ -15,12 +15,14 @@ import com.uade.mecanicosya.dispatch.domain.RouteEstimate;
 import com.uade.mecanicosya.dispatch.domain.TravelTimeEstimator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.IntStream;
 
@@ -91,7 +93,9 @@ public class DispatchFacade {
 
     /**
      * El mecánico toma el pedido. Gana el primero; los demás reciben {@link OfferAlreadyTakenException}. Si el
-     * ganador repite el pedido (por ejemplo, porque se le cortó la conexión), recibe el mismo resultado.
+     * ganador repite el pedido (por ejemplo, porque se le cortó la conexión), recibe el mismo resultado. Un mecánico
+     * que ya está en otro trabajo recibe {@link MechanicBusyException}: un índice único en la base lo
+     * garantiza aunque acepte dos pedidos a la vez.
      *
      * <p>El aviso a assistance-service corre dentro de la transacción: si falla, la asignación se deshace y la
      * oferta sigue abierta para reintentar.
@@ -106,8 +110,11 @@ public class DispatchFacade {
         int round = dispatch.getRound();
         DispatchOffer offer = offerRepository.findByAssistanceIdAndRoundAndMechanicId(assistanceId, round, mechanicId)
                 .orElseThrow(() -> new OfferNotFoundException(assistanceId, mechanicId));
+        if (repository.hasActiveJob(mechanicId)) {
+            throw new MechanicBusyException(mechanicId);
+        }
 
-        if (repository.claim(assistanceId, round, mechanicId, offer.getDistanceKm(), offer.getEtaMinutes(), now) == 0) {
+        if (claim(assistanceId, round, mechanicId, offer, now) == 0) {
             DispatchMatch current = find(assistanceId);
             if (current.isTakenBy(mechanicId)) {
                 return current;
@@ -123,6 +130,26 @@ public class DispatchFacade {
         eventPublisher.matched(matched);
         LOGGER.info("Mechanic {} accepted assistance {} in round {}", mechanicId, assistanceId, round);
         return matched;
+    }
+
+    private int claim(UUID assistanceId, int round, UUID mechanicId, DispatchOffer offer, Instant now) {
+        try {
+            return repository.claim(assistanceId, round, mechanicId, offer.getDistanceKm(), offer.getEtaMinutes(), now);
+        } catch (DataIntegrityViolationException exception) {
+            // Aceptó otro pedido al mismo tiempo y ganó ese: la base no deja dos trabajos abiertos por mecánico.
+            throw new MechanicBusyException(mechanicId);
+        }
+    }
+
+    /**
+     * El mecánico terminó el trabajo y vuelve a recibir ofertas. Repetirlo no cambia nada.
+     */
+    @Transactional
+    public DispatchMatch complete(UUID assistanceId) {
+        DispatchMatch dispatch = find(assistanceId);
+        dispatch.complete(clock.instant());
+        LOGGER.info("Mechanic {} finished assistance {} and can take offers again", dispatch.getMechanicId(), assistanceId);
+        return dispatch;
     }
 
     @Transactional
@@ -213,15 +240,29 @@ public class DispatchFacade {
                 command.assistanceId(),
                 command.requiredSkill()
         );
-        List<MechanicCandidate> candidates = mechanicDirectory.findCandidates(
-                command.requiredSkill(),
-                command.vehicleType()
-        );
-        List<MechanicSelection> ranked = matchingStrategy.rank(command.latitude(), command.longitude(), candidates)
+        List<MechanicCandidate> candidates = command.mechanicKind() == null
+                ? mechanicDirectory.findCandidates(command.requiredSkill(), command.vehicleType())
+                : mechanicDirectory.findCandidates(command.requiredSkill(), command.vehicleType(), command.mechanicKind());
+        List<MechanicCandidate> free = withoutBusyMechanics(candidates);
+        List<MechanicSelection> ranked = matchingStrategy.rank(command.latitude(), command.longitude(), free)
                 .stream()
                 .limit(offerPolicy.maxOffers())
                 .toList();
         return withEta(command, ranked);
+    }
+
+    /** Un mecánico que está en un trabajo no recibe ofertas nuevas hasta terminarlo. */
+    private List<MechanicCandidate> withoutBusyMechanics(List<MechanicCandidate> candidates) {
+        if (candidates.isEmpty()) {
+            return candidates;
+        }
+        Set<UUID> busy = Set.copyOf(repository.findBusyMechanics(
+                candidates.stream().map(MechanicCandidate::id).toList()
+        ));
+        if (!busy.isEmpty()) {
+            LOGGER.info("Skipping {} busy mechanic(s): {}", busy.size(), busy);
+        }
+        return candidates.stream().filter(candidate -> !busy.contains(candidate.id())).toList();
     }
 
     /** Completa el tiempo de llegada de los que la estrategia ordenó sin calcularlo (nearest y best-rated). */

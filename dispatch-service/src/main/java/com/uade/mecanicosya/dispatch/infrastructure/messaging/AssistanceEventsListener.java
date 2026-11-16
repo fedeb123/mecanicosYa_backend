@@ -14,7 +14,8 @@ import java.util.UUID;
 
 /**
  * Consume los eventos de assistance-service. Es idempotente: si el mismo pedido llega dos veces, {@link
- * DispatchFacade#process} devuelve el despacho que ya existe sin volver a ofrecerlo.
+ * DispatchFacade#process} devuelve el despacho que ya existe sin volver a ofrecerlo. Cuando el trabajo termina
+ * ({@code ASSISTANCE_COMPLETED}), el mecánico queda libre para recibir ofertas otra vez.
  */
 @Component
 public class AssistanceEventsListener {
@@ -23,6 +24,7 @@ public class AssistanceEventsListener {
 
     static final String REQUESTED = "ASSISTANCE_REQUESTED";
     static final String CANCELLED = "ASSISTANCE_CANCELLED";
+    static final String COMPLETED = "ASSISTANCE_COMPLETED";
 
     private final DispatchFacade dispatchFacade;
     private final JsonMapper jsonMapper;
@@ -45,7 +47,8 @@ public class AssistanceEventsListener {
                         required(event, "requiredSkill").asString(),
                         required(event, "latitude").asDouble(),
                         required(event, "longitude").asDouble(),
-                        event.path("vehicleType").isString() ? event.get("vehicleType").asString() : null
+                        event.path("vehicleType").isString() ? event.get("vehicleType").asString() : null,
+                        event.path("mechanicKind").isString() ? event.get("mechanicKind").asString() : null
                 ));
             }
             case CANCELLED -> {
@@ -54,6 +57,14 @@ public class AssistanceEventsListener {
                     dispatchFacade.cancel(assistanceId);
                 } catch (DispatchNotFoundException exception) {
                     LOGGER.info("Assistance {} was cancelled before it was dispatched", assistanceId);
+                }
+            }
+            case COMPLETED -> {
+                LOGGER.info("Received {} for assistance {}", type, assistanceId);
+                try {
+                    dispatchFacade.complete(assistanceId);
+                } catch (DispatchNotFoundException exception) {
+                    LOGGER.warn("Assistance {} was completed without a dispatch", assistanceId);
                 }
             }
             default -> LOGGER.debug("Ignoring {} for assistance {}", type, assistanceId);

@@ -53,6 +53,28 @@ class AssistanceRequestTest {
     }
 
     @Test
+    void keepsTheEtaAndDistanceOfTheAssignedMechanic() {
+        AssistanceRequest assistance = newAssistance(bicycle);
+
+        assistance.assignMechanic(UUID.randomUUID(), 4, 0.43);
+
+        assertThat(assistance.getAssignedEtaMinutes()).isEqualTo(4);
+        assertThat(assistance.getAssignedDistanceKm()).isEqualTo(0.43);
+    }
+
+    @Test
+    void aRepeatedAssignmentFillsInTheEtaThatTheFirstOneDidNotHave() {
+        AssistanceRequest assistance = newAssistance(bicycle);
+        UUID mechanicId = UUID.randomUUID();
+
+        assistance.assignMechanic(mechanicId);
+        assistance.assignMechanic(mechanicId, 3, 0.16);
+
+        assertThat(assistance.getAssignedEtaMinutes()).isEqualTo(3);
+        assertThat(assistance.getAssignedDistanceKm()).isEqualTo(0.16);
+    }
+
+    @Test
     void copiesTheVehicleTypeFromTheVehicle() {
         AssistanceRequest assistance = newAssistance(bicycle);
 

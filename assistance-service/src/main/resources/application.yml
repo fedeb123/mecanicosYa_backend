@@ -23,6 +23,12 @@ spring:
     consumer:
       group-id: ${spring.application.name}
       auto-offset-reset: earliest
+  webservices:
+    # Servicio SOAP: POST /ws con el sobre SOAP, WSDL en GET /ws/triage.wsdl
+    path: /ws
+    servlet:
+      init:
+        transformWsdlLocations: true
   security:
     oauth2:
       resourceserver:

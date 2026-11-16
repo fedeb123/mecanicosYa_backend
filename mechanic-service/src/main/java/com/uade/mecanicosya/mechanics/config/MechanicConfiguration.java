@@ -27,6 +27,8 @@ public class MechanicConfiguration {
         return apiSecurity.filterChain(http, authorize -> authorize
                 .requestMatchers(HttpMethod.POST, "/api/mechanics").hasRole(Role.MECHANIC.name())
                 .requestMatchers(HttpMethod.GET, "/api/mechanics").hasRole(Role.ADMIN.name())
+                .requestMatchers(HttpMethod.GET, "/api/mechanics/nearby")
+                .hasAnyRole(Role.RIDER.name(), Role.ADMIN.name())
                 .requestMatchers(HttpMethod.GET, "/api/mechanics/candidates")
                 .hasAnyRole(Role.SERVICE.name(), Role.ADMIN.name())
                 .requestMatchers(HttpMethod.POST, "/api/mechanics/*/approve").hasRole(Role.ADMIN.name())

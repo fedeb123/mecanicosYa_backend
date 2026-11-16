@@ -52,8 +52,9 @@ clients:
     # Sin clave, el tiempo de llegada se estima en línea recta. Nunca se pone la clave en el repo.
     api-key: ${ORS_API_KEY:}
     base-url: ${ORS_BASE_URL:https://api.openrouteservice.org}
-    # driving-car, cycling-regular, foot-walking...: cómo se mueve el mecánico
-    profile: ${ORS_PROFILE:driving-car}
+    # cycling-regular, driving-car, foot-walking...: cómo se mueve el mecánico. Lo usan el tiempo de la oferta y
+    # la navegación de la app, así los dos dan lo mismo.
+    profile: ${ORS_PROFILE:cycling-regular}
     timeout: ${ORS_TIMEOUT:3s}
 
 dispatch:

@@ -706,9 +706,9 @@ $('#btn-demo').addEventListener('click', event => withBusy(event.target, async (
   };
 
   const profiles = [
-    { prefix: 'ada', name: 'Ada Mecánica', latitude: -34.5800, longitude: -58.4255, skills: ['CHAIN_REPAIR', 'TIRE_REPAIR'], vehicleTypes: ['BICYCLE', 'E_BIKE'] },
-    { prefix: 'linus', name: 'Linus Motos', latitude: -34.6400, longitude: -58.4400, skills: ['BRAKE_REPAIR'], vehicleTypes: ['MOTORCYCLE'] },
-    { prefix: 'grace', name: 'Grace Rodados', latitude: -34.5840, longitude: -58.4300, skills: ['CHAIN_REPAIR'], vehicleTypes: ['BICYCLE'] },
+    { prefix: 'ada', name: 'Ada Mecánica', phone: '11 5555 0101', latitude: -34.5800, longitude: -58.4255, skills: ['CHAIN_REPAIR', 'TIRE_REPAIR'], vehicleTypes: ['BICYCLE', 'E_BIKE'] },
+    { prefix: 'linus', name: 'Linus Motos', phone: '11 5555 0102', latitude: -34.6400, longitude: -58.4400, skills: ['BRAKE_REPAIR'], vehicleTypes: ['MOTORCYCLE'] },
+    { prefix: 'grace', name: 'Grace Rodados', phone: '11 5555 0103', latitude: -34.5840, longitude: -58.4300, skills: ['CHAIN_REPAIR'], vehicleTypes: ['BICYCLE'] },
   ];
   const mechanics = [];
   for (const { prefix, ...profile } of profiles) {

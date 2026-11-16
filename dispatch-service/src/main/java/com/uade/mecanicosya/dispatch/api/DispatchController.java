@@ -45,14 +45,15 @@ public class DispatchController {
 
     @GetMapping("/offers")
     @Operation(summary = "List the open offers of the mechanic of the token; 403 while pending verification",
-            description = "An admin passes mechanicId.")
+            description = "Empty while the mechanic is working on an accepted assistance. An admin passes mechanicId.")
     public List<OfferResponse> openOffers(CurrentUser user, @RequestParam(required = false) UUID mechanicId) {
         return facade.openOffers(approvedMechanic(user, mechanicId)).stream().map(OfferResponse::from).toList();
     }
 
     @PostMapping("/{assistanceId}/accept")
     @Operation(summary = "Take an offered assistance; the first mechanic wins and the rest get 409",
-            description = "The mechanic is the one of the token; 403 while pending verification. The body is optional.")
+            description = "The mechanic is the one of the token; 403 while pending verification. A mechanic who is "
+                    + "still working on another assistance gets 409 MECHANIC_BUSY. The body is optional.")
     public DispatchResponse accept(
             CurrentUser user,
             @PathVariable UUID assistanceId,
