@@ -76,13 +76,6 @@ class DispatchRestClientTest {
     }
 
     @Test
-    void cancellingAnAssistanceThatWasNeverDispatchedIsNotAnError() throws IOException {
-        startServer(404, "{}", Duration.ZERO);
-
-        client(baseUrl(), Duration.ofSeconds(2)).cancel(assistanceId);
-    }
-
-    @Test
     void readsANoCandidateAnswer() throws IOException {
         startServer(200, """
                 {"assistanceId":"0b7e2a3c-5d6f-4a1b-8c9d-0e1f2a3b4c5d","status":"NO_CANDIDATE"}

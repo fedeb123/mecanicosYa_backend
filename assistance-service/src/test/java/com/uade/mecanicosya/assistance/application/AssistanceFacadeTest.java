@@ -24,6 +24,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class AssistanceFacadeTest {
@@ -33,12 +35,14 @@ class AssistanceFacadeTest {
     private final AssistanceRepository repository = mock(AssistanceRepository.class);
     private final ClientFacade clientFacade = mock(ClientFacade.class);
     private final List<Object> publishedEvents = new ArrayList<>();
+    private final List<String> sentRatings = new ArrayList<>();
     private final AssistanceFacade facade = new AssistanceFacade(
             repository,
             mock(StatusChangeRepository.class),
             clientFacade,
             new AssistanceFactory(),
             publishedEvents::add,
+            (mechanicId, assistanceId, score) -> sentRatings.add(mechanicId + "/" + assistanceId + "/" + score),
             new RequestPolicy(Duration.ofMinutes(15), Duration.ofMinutes(5)),
             Clock.fixed(NOW, ZoneOffset.UTC)
     );
@@ -144,6 +148,36 @@ class AssistanceFacadeTest {
         assertThatThrownBy(() -> facade.complete(requested.getId()))
                 .isInstanceOf(InvalidStatusTransitionException.class);
         assertThat(publishedEvents).isEmpty();
+    }
+
+    @Test
+    void ratingACompletedAssistanceSendsTheScoreToTheMechanicAndSavesIt() {
+        UUID mechanicId = UUID.randomUUID();
+        AssistanceRequest completed = completedAssistance(mechanicId);
+
+        AssistanceRequest rated = facade.rate(completed.getId(), 4, "Llegó rápido");
+
+        assertThat(rated.getRating()).isEqualTo(4);
+        assertThat(rated.getRatingComment()).isEqualTo("Llegó rápido");
+        assertThat(sentRatings).containsExactly(mechanicId + "/" + completed.getId() + "/4");
+        verify(repository).save(completed);
+    }
+
+    @Test
+    void anAssistanceThatIsNotCompletedCannotBeRated() {
+        AssistanceRequest requested = storedAssistance();
+
+        assertThatThrownBy(() -> facade.rate(requested.getId(), 5, null))
+                .isInstanceOf(InvalidStatusTransitionException.class);
+        assertThat(sentRatings).isEmpty();
+    }
+
+    private AssistanceRequest completedAssistance(UUID mechanicId) {
+        AssistanceRequest assistance = storedAssistance();
+        assistance.assignMechanic(mechanicId);
+        assistance.start();
+        assistance.complete();
+        return assistance;
     }
 
     private AssistanceRequest storedAssistance() {

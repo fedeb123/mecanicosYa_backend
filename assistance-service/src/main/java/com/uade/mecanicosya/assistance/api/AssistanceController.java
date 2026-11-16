@@ -3,6 +3,7 @@ package com.uade.mecanicosya.assistance.api;
 import com.uade.mecanicosya.assistance.api.AssistanceDtos.AssignMechanicRequest;
 import com.uade.mecanicosya.assistance.api.AssistanceDtos.AssistanceResponse;
 import com.uade.mecanicosya.assistance.api.AssistanceDtos.CreateAssistanceRequest;
+import com.uade.mecanicosya.assistance.api.AssistanceDtos.RateAssistanceRequest;
 import com.uade.mecanicosya.assistance.api.AssistanceDtos.StatusChangeResponse;
 import com.uade.mecanicosya.assistance.application.AssistanceCreation;
 import com.uade.mecanicosya.assistance.application.AssistanceDispatchCoordinator;
@@ -127,6 +128,12 @@ public class AssistanceController {
     @Operation(summary = "Mark the assistance as completed")
     public AssistanceResponse complete(@PathVariable UUID id) {
         return AssistanceResponse.from(facade.complete(id));
+    }
+
+    @PostMapping("/{id}/rating")
+    @Operation(summary = "Rate the mechanic of a completed assistance (1 to 5); updates the mechanic's average")
+    public AssistanceResponse rate(@PathVariable UUID id, @Valid @RequestBody RateAssistanceRequest request) {
+        return AssistanceResponse.from(facade.rate(id, request.score(), request.comment()));
     }
 
     @PostMapping("/{id}/cancel")

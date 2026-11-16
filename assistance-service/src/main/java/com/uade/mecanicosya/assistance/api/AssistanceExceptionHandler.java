@@ -7,6 +7,7 @@ import com.uade.mecanicosya.assistance.application.DispatchUnavailableException;
 import com.uade.mecanicosya.assistance.application.DuplicateClientException;
 import com.uade.mecanicosya.assistance.application.RequestExpiredException;
 import com.uade.mecanicosya.assistance.application.VehicleNotFoundException;
+import com.uade.mecanicosya.assistance.domain.AssistanceAlreadyRatedException;
 import com.uade.mecanicosya.assistance.domain.InvalidStatusTransitionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -82,6 +83,7 @@ public class AssistanceExceptionHandler {
 
     @ExceptionHandler({
             InvalidStatusTransitionException.class,
+            AssistanceAlreadyRatedException.class,
             DuplicateClientException.class,
             DataIntegrityViolationException.class,
             OptimisticLockingFailureException.class

@@ -16,6 +16,7 @@
     <span class="service" data-service="mechanic">mechanic-service</span>
     <span class="service" data-service="assistance">assistance-service</span>
     <span class="service" data-service="dispatch">dispatch-service</span>
+    <a class="ghost-link" href="http://localhost:8090" target="_blank" rel="noopener">Kafka UI</a>
     <button type="button" class="ghost" id="refresh-health">Actualizar</button>
   </div>
 </header>
@@ -180,8 +181,8 @@
       <div class="card wide">
         <h2>Demo rápida</h2>
         <p>Hace el mismo recorrido que <code>scripts/demo.sh</code>: registra tres mecánicos y los pone disponibles,
-          registra un cliente con su bicicleta y pide una asistencia de cadena. El pedido se ofrece a los dos que
-          arreglan bicicletas, los dos aceptan al mismo tiempo y uno solo se lo queda; el otro recibe 409. Al final
+          registra un cliente con su bicicleta y pide una asistencia de cadena. El pedido viaja por Kafka a
+          dispatch-service, que se lo ofrece a los dos que arreglan bicicletas; los dos aceptan al mismo tiempo y uno solo se lo queda; el otro recibe 409. Al final
           los tres se desconectan para no recibir los pedidos de la próxima corrida.
           Todo va con el mismo <code>X-Correlation-Id</code> para seguirlo en los logs.</p>
         <button type="button" id="btn-demo">Correr demo</button>

@@ -5,6 +5,8 @@ import com.uade.mecanicosya.mechanics.domain.VehicleType;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -27,6 +29,12 @@ public final class MechanicDtos {
     ) {
     }
 
+    public record RatingRequest(
+            @NotNull UUID assistanceId,
+            @NotNull @Min(1) @Max(5) Integer score
+    ) {
+    }
+
     public record AvailabilityRequest(
             boolean available,
             @DecimalMin("-90.0") @DecimalMax("90.0") double latitude,
@@ -42,6 +50,7 @@ public final class MechanicDtos {
             double longitude,
             boolean available,
             double rating,
+            int ratingCount,
             Set<String> skills,
             Set<VehicleType> vehicleTypes
     ) {
@@ -54,6 +63,7 @@ public final class MechanicDtos {
                     mechanic.getLongitude(),
                     mechanic.isAvailable(),
                     mechanic.getRating(),
+                    mechanic.getRatingCount(),
                     mechanic.getSkills(),
                     mechanic.getVehicleTypes()
             );

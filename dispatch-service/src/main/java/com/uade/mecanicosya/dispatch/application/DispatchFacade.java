@@ -1,5 +1,6 @@
 package com.uade.mecanicosya.dispatch.application;
 
+import com.uade.mecanicosya.dispatch.application.DispatchEventPublisher.UnmatchedReason;
 import com.uade.mecanicosya.dispatch.domain.DispatchMatch;
 import com.uade.mecanicosya.dispatch.domain.DispatchOffer;
 import com.uade.mecanicosya.dispatch.domain.DispatchOfferRepository;
@@ -30,6 +31,7 @@ public class DispatchFacade {
     private final MechanicDirectory mechanicDirectory;
     private final MatchingStrategy matchingStrategy;
     private final AssistanceAssignmentPort assignmentPort;
+    private final DispatchEventPublisher eventPublisher;
     private final OfferPolicy offerPolicy;
     private final Clock clock;
 
@@ -39,6 +41,7 @@ public class DispatchFacade {
             MechanicDirectory mechanicDirectory,
             MatchingStrategy matchingStrategy,
             AssistanceAssignmentPort assignmentPort,
+            DispatchEventPublisher eventPublisher,
             OfferPolicy offerPolicy,
             Clock clock
     ) {
@@ -47,6 +50,7 @@ public class DispatchFacade {
         this.mechanicDirectory = mechanicDirectory;
         this.matchingStrategy = matchingStrategy;
         this.assignmentPort = assignmentPort;
+        this.eventPublisher = eventPublisher;
         this.offerPolicy = offerPolicy;
         this.clock = clock;
     }
@@ -109,8 +113,10 @@ public class DispatchFacade {
                 .ifPresent(accepted -> accepted.accept(now));
         offerRepository.closePending(assistanceId, round, OfferStatus.LOST);
         assignmentPort.assign(assistanceId, mechanicId);
+        DispatchMatch matched = find(assistanceId);
+        eventPublisher.matched(matched);
         LOGGER.info("Mechanic {} accepted assistance {} in round {}", mechanicId, assistanceId, round);
-        return find(assistanceId);
+        return matched;
     }
 
     @Transactional
@@ -146,6 +152,7 @@ public class DispatchFacade {
         for (DispatchMatch dispatch : expired) {
             offerRepository.closePending(dispatch.getAssistanceId(), dispatch.getRound(), OfferStatus.EXPIRED);
             dispatch.expire();
+            eventPublisher.unmatched(dispatch, UnmatchedReason.EXPIRED);
         }
         return expired.size();
     }
@@ -154,7 +161,7 @@ public class DispatchFacade {
         List<MechanicSelection> ranked = rankCandidates(command);
         if (ranked.isEmpty()) {
             LOGGER.warn("No mechanic candidate found for assistance {}", command.assistanceId());
-            return repository.save(DispatchMatch.noCandidate(
+            DispatchMatch unmatched = repository.save(DispatchMatch.noCandidate(
                     command.assistanceId(),
                     command.requiredSkill(),
                     command.vehicleType(),
@@ -162,6 +169,8 @@ public class DispatchFacade {
                     command.longitude(),
                     now
             ));
+            eventPublisher.unmatched(unmatched, UnmatchedReason.NO_CANDIDATE);
+            return unmatched;
         }
         DispatchMatch saved = repository.save(DispatchMatch.offered(
                 command.assistanceId(),
@@ -173,6 +182,7 @@ public class DispatchFacade {
                 now.plus(offerPolicy.ttl())
         ));
         saveOffers(saved, ranked, now);
+        eventPublisher.offered(saved, ranked.size());
         return saved;
     }
 
@@ -182,10 +192,12 @@ public class DispatchFacade {
         if (ranked.isEmpty()) {
             LOGGER.warn("No mechanic candidate found for assistance {} on a new round", command.assistanceId());
             existing.markNoCandidate();
+            eventPublisher.unmatched(existing, UnmatchedReason.NO_CANDIDATE);
             return existing;
         }
         existing.reopen(now.plus(offerPolicy.ttl()));
         saveOffers(existing, ranked, now);
+        eventPublisher.offered(existing, ranked.size());
         return existing;
     }
 

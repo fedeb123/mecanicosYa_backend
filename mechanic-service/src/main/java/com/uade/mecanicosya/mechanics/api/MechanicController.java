@@ -4,6 +4,7 @@ import com.uade.mecanicosya.mechanics.application.MechanicFacade;
 import com.uade.mecanicosya.mechanics.api.MechanicDtos.AvailabilityRequest;
 import com.uade.mecanicosya.mechanics.api.MechanicDtos.CreateMechanicRequest;
 import com.uade.mecanicosya.mechanics.api.MechanicDtos.MechanicResponse;
+import com.uade.mecanicosya.mechanics.api.MechanicDtos.RatingRequest;
 import com.uade.mecanicosya.mechanics.domain.VehicleType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -65,6 +66,12 @@ public class MechanicController {
                 request.latitude(),
                 request.longitude()
         ));
+    }
+
+    @PostMapping("/{id}/ratings")
+    @Operation(summary = "Add the rating of a completed assistance to the mechanic's average (idempotent per assistance)")
+    public MechanicResponse rate(@PathVariable UUID id, @Valid @RequestBody RatingRequest request) {
+        return MechanicResponse.from(facade.rate(id, request.assistanceId(), request.score()));
     }
 
     @GetMapping("/candidates")

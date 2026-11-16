@@ -18,6 +18,22 @@ wait_for_health() {
   exit 1
 }
 
+# Espera hasta que el campo del JSON que devuelve la URL tenga un valor (distinto de null y de vacío).
+wait_for_field() {
+  local url="$1"
+  local field="$2"
+  local value
+  for _ in $(seq 1 30); do
+    value=$(curl -fsS "$url" | python3 -c 'import json,sys; v=json.load(sys.stdin).get(sys.argv[1]); print("" if v in (None, 0) else v)' "$field")
+    if [ -n "$value" ]; then
+      return 0
+    fi
+    sleep 0.5
+  done
+  echo "Timeout esperando ${field} en ${url}" >&2
+  exit 1
+}
+
 wait_for_health "http://localhost:8081/actuator/health" "mechanic-service"
 wait_for_health "http://localhost:8082/actuator/health" "assistance-service"
 wait_for_health "http://localhost:8083/actuator/health" "dispatch-service"
@@ -83,7 +99,13 @@ curl -sS -o /dev/null -w 'HTTP %{http_code}\n' -X POST http://localhost:8082/api
   -d "$assistance_body"
 echo
 
-echo "3. Ofertas abiertas de Ada y de Grace (Linus arregla motos, no recibe el pedido):"
+echo "3. dispatch-service toma el pedido de Kafka (assistance.events) y lo ofrece; assistance-service recibe la"
+echo "   oferta por dispatch.events y guarda hasta cuándo se puede aceptar:"
+wait_for_field "http://localhost:8082/api/assistances/${assistance_id}" offersExpireAt
+curl -fsS "http://localhost:8082/api/assistances/${assistance_id}"
+echo
+echo
+echo "   Ofertas abiertas de Ada y de Grace (Linus arregla motos, no recibe el pedido):"
 curl -fsS "http://localhost:8083/api/dispatches/offers?mechanicId=${mechanic_one_id}"
 echo
 curl -fsS "http://localhost:8083/api/dispatches/offers?mechanicId=${mechanic_three_id}"
@@ -112,6 +134,20 @@ curl -fsS "http://localhost:8082/api/assistances/${assistance_id}"
 echo
 echo "Despacho:"
 curl -fsS "http://localhost:8083/api/dispatches/${assistance_id}"
+echo
+
+curl -fsS -X POST "http://localhost:8082/api/assistances/${assistance_id}/start" >/dev/null
+curl -fsS -X POST "http://localhost:8082/api/assistances/${assistance_id}/complete" >/dev/null
+echo "Calificación del trabajo:"
+curl -fsS -X POST "http://localhost:8082/api/assistances/${assistance_id}/rating" \
+  -H 'Content-Type: application/json' \
+  -d '{"score":4,"comment":"Llegó rápido y dejó la bici andando"}'
+echo
+assigned_mechanic_id=$(curl -fsS "http://localhost:8082/api/assistances/${assistance_id}" | json_field assignedMechanicId)
+# La calificación llega a mechanic-service por Kafka.
+wait_for_field "http://localhost:8081/api/mechanics/${assigned_mechanic_id}" ratingCount
+echo "Mecánico con su calificación actualizada (llegó por Kafka):"
+curl -fsS "http://localhost:8081/api/mechanics/${assigned_mechanic_id}"
 echo
 echo "Historial de estados:"
 curl -fsS "http://localhost:8082/api/assistances/${assistance_id}/history"

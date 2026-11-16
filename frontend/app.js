@@ -52,7 +52,7 @@ const newIdempotencyKey = () => (crypto.randomUUID ? crypto.randomUUID() : 'fron
 
 async function api(service, method, path, body, correlationId = newCorrelationId(), extraHeaders = {}) {
   const headers = { 'X-Correlation-Id': correlationId, ...extraHeaders };
-  if (body !== undefined) headers['Content-Type'] = 'application/json';
+  if (body != null) headers['Content-Type'] = 'application/json';
   const started = performance.now();
   let status = 0;
   let data = null;
@@ -61,7 +61,7 @@ async function api(service, method, path, body, correlationId = newCorrelationId
     const response = await fetch(`/${service}${path}`, {
       method,
       headers,
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body: body == null ? undefined : JSON.stringify(body),
     });
     status = response.status;
     text = await response.text();
@@ -410,12 +410,26 @@ onSubmit('#form-assistance', async form => {
   const id = result.data.id;
   remember('assistances', { id, label: `${body.problemType} · ${body.description.slice(0, 30)}` });
   $('#form-track [name=assistanceId]').value = id;
+  const dispatched = await waitForOffers(id, correlationId);
   await showAssistance(id, $('#track-result'), correlationId);
-  const state = result.data.status === 'UNMATCHED'
+  const state = !dispatched
+    ? 'Todavía no llegó la respuesta del despacho por Kafka; actualizá el seguimiento en unos segundos.'
+    : dispatched.data?.status === 'UNMATCHED'
     ? 'No hay mecánicos disponibles: quedó UNMATCHED.'
     : 'Se ofreció a los mecánicos cercanos; aceptala desde "Ofertas del mecánico".';
   showInfo(box, `Asistencia creada. ${state} Correlation id: <span class="mono">${correlationId}</span>`);
 });
+
+// El despacho llega por Kafka: después del alta, se espera a que assistance-service reciba la oferta (o el aviso
+// de que no hay mecánicos) antes de mostrar el pedido.
+async function waitForOffers(id, correlationId) {
+  for (let attempt = 0; attempt < 20; attempt++) {
+    const current = await api('assistance', 'GET', `/api/assistances/${id}`, undefined, correlationId);
+    if (!current.ok || current.data.offersExpireAt || current.data.status !== 'REQUESTED') return current;
+    await new Promise(resolve => setTimeout(resolve, 400));
+  }
+  return null;
+}
 
 function selectedAssistanceId() {
   const f = $('#form-track').elements;
@@ -532,6 +546,9 @@ $('#btn-demo').addEventListener('click', event => withBusy(event.target, async (
   remember('assistances', { id: assistance.data.id, label: 'CHAIN · Se cortó la cadena en Palermo' });
   const retry = await api('assistance', 'POST', '/api/assistances', request, cid, { 'Idempotency-Key': key });
   step(`✓ Pedí la asistencia (${statusBadge(assistance.data.status)}). Un reintento con la misma clave devolvió HTTP ${retry.status} y el mismo pedido.`);
+  const offered = await waitForOffers(assistance.data.id, cid);
+  if (!offered?.data?.offersExpireAt) return fail(offered || { status: 0, data: { detail: 'El despacho no respondió por Kafka' } });
+  step('✓ dispatch-service recibió el pedido por Kafka y se lo ofreció a Ada y a Grace; la oferta volvió por Kafka a assistance-service.');
 
   const [adaAnswer, graceAnswer] = await Promise.all([
     api('dispatch', 'POST', `/api/dispatches/${assistance.data.id}/accept`, { mechanicId: ada.data.id }, cid),

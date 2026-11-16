@@ -72,29 +72,6 @@ public class DispatchRestClient implements DispatchPort {
         return toOutcome(response);
     }
 
-    @Override
-    public void cancel(UUID assistanceId) {
-        try {
-            restClient.post()
-                    .uri("/api/dispatches/{assistanceId}/cancel", assistanceId)
-                    .retrieve()
-                    .toBodilessEntity();
-        } catch (RestClientResponseException exception) {
-            if (!exception.getStatusCode().isSameCodeAs(HttpStatus.NOT_FOUND)) {
-                throw new DispatchFailedException(
-                        "dispatch-service answered " + exception.getStatusCode().value() + " to the cancellation",
-                        exception
-                );
-            }
-            // Nunca llegó a despacharse: no hay ofertas que retirar.
-        } catch (RestClientException exception) {
-            throw new DispatchUnavailableException(
-                    "dispatch-service did not respond to the cancellation: " + exception.getMessage(),
-                    exception
-            );
-        }
-    }
-
     private static DispatchOutcome toOutcome(DispatchResponse response) {
         return switch (response) {
             case null -> throw new DispatchFailedException("dispatch-service returned an empty response");

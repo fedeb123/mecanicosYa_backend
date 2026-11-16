@@ -127,6 +127,45 @@ class AssistanceRequestTest {
     }
 
     @Test
+    void aCompletedAssistanceCanBeRatedOnce() {
+        AssistanceRequest assistance = completed();
+
+        assistance.rate(5, "  Excelente  ", Instant.parse("2026-09-28T13:00:00Z"));
+
+        assertThat(assistance.getRating()).isEqualTo(5);
+        assertThat(assistance.getRatingComment()).isEqualTo("Excelente");
+        assertThatThrownBy(() -> assistance.rate(4, null, Instant.now()))
+                .isInstanceOf(AssistanceAlreadyRatedException.class);
+    }
+
+    @Test
+    void theRatingMustBeBetweenOneAndFive() {
+        AssistanceRequest assistance = completed();
+
+        assertThatThrownBy(() -> assistance.rate(6, null, Instant.now()))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThat(assistance.getRating()).isNull();
+    }
+
+    @Test
+    void anAssistanceInProgressCannotBeRated() {
+        AssistanceRequest assistance = newAssistance(bicycle);
+        assistance.assignMechanic(UUID.randomUUID());
+        assistance.start();
+
+        assertThatThrownBy(() -> assistance.rate(5, null, Instant.now()))
+                .isInstanceOf(InvalidStatusTransitionException.class);
+    }
+
+    private AssistanceRequest completed() {
+        AssistanceRequest assistance = newAssistance(bicycle);
+        assistance.assignMechanic(UUID.randomUUID());
+        assistance.start();
+        assistance.complete();
+        return assistance;
+    }
+
+    @Test
     void anAssistanceNobodyAcceptedCanBePublishedAgain() {
         AssistanceRequest assistance = newAssistance(bicycle);
         assistance.awaitOffers(Instant.parse("2026-09-28T12:02:00Z"));

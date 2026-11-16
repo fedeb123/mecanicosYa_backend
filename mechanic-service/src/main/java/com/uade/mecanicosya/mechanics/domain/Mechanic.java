@@ -44,6 +44,9 @@ public class Mechanic {
     @Column(nullable = false)
     private double rating;
 
+    @Column(nullable = false, columnDefinition = "integer default 0 not null")
+    private int ratingCount;
+
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "mechanic_skills", joinColumns = @JoinColumn(name = "mechanic_id"))
     @Column(name = "skill", nullable = false, length = 80)
@@ -85,6 +88,18 @@ public class Mechanic {
         this.available = available;
         this.latitude = latitude;
         this.longitude = longitude;
+    }
+
+    /**
+     * Suma una calificación de 1 a 5 al promedio. Mientras no tenga calificaciones, el mecánico
+     * muestra 5.0; la primera calificación reemplaza ese valor inicial.
+     */
+    public void addRating(int score) {
+        if (score < 1 || score > 5) {
+            throw new IllegalArgumentException("The rating must be between 1 and 5");
+        }
+        this.rating = (rating * ratingCount + score) / (ratingCount + 1);
+        this.ratingCount++;
     }
 
     public boolean hasSkill(String requiredSkill) {
@@ -144,6 +159,10 @@ public class Mechanic {
 
     public double getRating() {
         return rating;
+    }
+
+    public int getRatingCount() {
+        return ratingCount;
     }
 
     public Set<String> getSkills() {
