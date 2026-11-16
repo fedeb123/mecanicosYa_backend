@@ -134,4 +134,14 @@ public class AssistanceController {
     public AssistanceResponse cancel(@PathVariable UUID id) {
         return AssistanceResponse.from(facade.cancel(id));
     }
+
+    @PostMapping("/cancel-by-key")
+    @Operation(summary = "Cancel the assistance created with this Idempotency-Key, for a request the phone "
+            + "does not know whether it arrived; 404 if it never did")
+    public AssistanceResponse cancelByKey(
+            @RequestHeader(IDEMPOTENCY_KEY) String idempotencyKey,
+            @RequestParam UUID clientId
+    ) {
+        return AssistanceResponse.from(facade.cancelByIdempotencyKey(clientId, idempotencyKey));
+    }
 }

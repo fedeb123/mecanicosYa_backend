@@ -186,11 +186,30 @@ class AssistanceRequestFlowTest {
         verify(dispatchPort, times(1)).cancel(UUID.fromString(id));
     }
 
+    @Test
+    void thePhoneCancelsByKeyARequestItDoesNotKnowArrived() throws Exception {
+        String id = idOf(create("key-offline-cancel", null));
+
+        HttpResponse<String> cancelled = cancelByKey("key-offline-cancel");
+        assertThat(cancelled.statusCode()).isEqualTo(200);
+        assertThat(cancelled.body()).contains("\"id\":\"" + id + "\"", "\"status\":\"CANCELLED\"");
+        assertThat(cancelByKey("key-offline-cancel").statusCode()).isEqualTo(200);
+
+        HttpResponse<String> neverArrived = cancelByKey("key-never-arrived");
+        assertThat(neverArrived.statusCode()).isEqualTo(404);
+    }
+
     private HttpResponse<String> create(String key, Instant clientCreatedAt) throws IOException, InterruptedException {
         return send(HttpRequest.newBuilder(uri("/api/assistances"))
                 .header("Content-Type", "application/json")
                 .header("Idempotency-Key", key)
                 .POST(HttpRequest.BodyPublishers.ofString(body(clientCreatedAt))));
+    }
+
+    private HttpResponse<String> cancelByKey(String key) throws IOException, InterruptedException {
+        return send(HttpRequest.newBuilder(uri("/api/assistances/cancel-by-key?clientId=" + client.getId()))
+                .header("Idempotency-Key", key)
+                .POST(HttpRequest.BodyPublishers.noBody()));
     }
 
     private HttpResponse<String> assign(String id, UUID mechanicId) throws IOException, InterruptedException {

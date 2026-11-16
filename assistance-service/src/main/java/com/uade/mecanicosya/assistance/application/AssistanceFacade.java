@@ -178,6 +178,16 @@ public class AssistanceFacade {
         return transition(id, AssistanceRequest::cancel);
     }
 
+    /**
+     * Cancela el pedido que el teléfono mandó sin saber si llegó. Si nunca llegó, no hay nada que cancelar.
+     */
+    @Transactional
+    public AssistanceRequest cancelByIdempotencyKey(UUID clientId, String idempotencyKey) {
+        AssistanceRequest assistance = repository.findByClient_IdAndIdempotencyKey(clientId, idempotencyKey)
+                .orElseThrow(() -> AssistanceNotFoundException.forIdempotencyKey(idempotencyKey));
+        return transition(assistance.getId(), AssistanceRequest::cancel);
+    }
+
     private void rejectIfTooOld(Instant clientCreatedAt) {
         if (clientCreatedAt == null) {
             return;
