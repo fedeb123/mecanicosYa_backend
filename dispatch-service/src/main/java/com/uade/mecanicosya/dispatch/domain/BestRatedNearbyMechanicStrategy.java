@@ -6,10 +6,9 @@ import org.springframework.stereotype.Component;
 
 import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
 
 /**
- * Elige al mecánico mejor calificado dentro de un radio máximo; a igual calificación, el más cercano.
+ * Ordena a los mecánicos dentro de un radio máximo: primero el mejor calificado y, a igual calificación, el más cercano.
  */
 @Component
 @ConditionalOnProperty(name = "dispatch.matching.strategy", havingValue = "best-rated")
@@ -27,7 +26,7 @@ public class BestRatedNearbyMechanicStrategy implements MatchingStrategy {
     }
 
     @Override
-    public Optional<MechanicSelection> select(
+    public List<MechanicSelection> rank(
             double assistanceLatitude,
             double assistanceLongitude,
             List<MechanicCandidate> candidates
@@ -44,7 +43,8 @@ public class BestRatedNearbyMechanicStrategy implements MatchingStrategy {
                     return new MechanicSelection(candidate, GeoDistance.round(distance), candidate.rating());
                 })
                 .filter(selection -> selection.distanceKm() <= maxDistanceKm)
-                .max(Comparator.comparingDouble(MechanicSelection::score)
-                        .thenComparing(Comparator.comparingDouble(MechanicSelection::distanceKm).reversed()));
+                .sorted(Comparator.comparingDouble(MechanicSelection::score).reversed()
+                        .thenComparingDouble(MechanicSelection::distanceKm))
+                .toList();
     }
 }

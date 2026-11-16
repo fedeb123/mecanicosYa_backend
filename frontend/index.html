@@ -156,7 +156,7 @@
           <label>o pegar un id <input name="manualId" placeholder="uuid"></label>
           <div class="actions">
             <button type="submit">Consultar</button>
-            <button type="button" data-action="dispatch" class="ghost">Reintentar despacho</button>
+            <button type="button" data-action="dispatch" class="ghost">Volver a publicar</button>
             <button type="button" data-action="start" class="ghost">Iniciar</button>
             <button type="button" data-action="complete" class="ghost">Completar</button>
             <button type="button" data-action="cancel" class="ghost danger">Cancelar</button>
@@ -164,14 +164,25 @@
         </form>
         <div id="track-result"></div>
       </div>
+
+      <div class="card wide">
+        <h2>Ofertas del mecánico</h2>
+        <form id="form-offers" class="row">
+          <label>Mecánico <select name="mechanicId" class="select-mechanic" required></select></label>
+          <button type="submit">Ver ofertas</button>
+        </form>
+        <div id="offers-result"></div>
+      </div>
     </section>
 
     <!-- Demo -->
     <section class="panel" data-panel="demo">
       <div class="card wide">
         <h2>Demo rápida</h2>
-        <p>Hace el mismo recorrido que <code>scripts/demo.sh</code>: registra dos mecánicos y los pone disponibles,
-          registra un cliente con su bicicleta, pide una asistencia de cadena y muestra el despacho y el historial.
+        <p>Hace el mismo recorrido que <code>scripts/demo.sh</code>: registra tres mecánicos y los pone disponibles,
+          registra un cliente con su bicicleta y pide una asistencia de cadena. El pedido se ofrece a los dos que
+          arreglan bicicletas, los dos aceptan al mismo tiempo y uno solo se lo queda; el otro recibe 409. Al final
+          los tres se desconectan para no recibir los pedidos de la próxima corrida.
           Todo va con el mismo <code>X-Correlation-Id</code> para seguirlo en los logs.</p>
         <button type="button" id="btn-demo">Correr demo</button>
         <div id="demo-result"></div>

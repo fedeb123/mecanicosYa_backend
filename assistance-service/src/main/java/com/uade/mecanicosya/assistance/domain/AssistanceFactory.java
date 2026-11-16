@@ -26,7 +26,9 @@ public class AssistanceFactory {
             String problemType,
             String requiredSkill,
             double latitude,
-            double longitude
+            double longitude,
+            String idempotencyKey,
+            Instant clientCreatedAt
     ) {
         return new AssistanceRequest(
                 UUID.randomUUID(),
@@ -37,7 +39,9 @@ public class AssistanceFactory {
                 requiredSkill,
                 latitude,
                 longitude,
-                Instant.now(clock)
+                Instant.now(clock),
+                idempotencyKey,
+                clientCreatedAt
         );
     }
 }

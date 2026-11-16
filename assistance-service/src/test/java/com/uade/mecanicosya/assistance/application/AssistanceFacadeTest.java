@@ -11,7 +11,10 @@ import com.uade.mecanicosya.assistance.domain.Vehicle;
 import com.uade.mecanicosya.assistance.domain.VehicleType;
 import org.junit.jupiter.api.Test;
 
+import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -25,6 +28,8 @@ import static org.mockito.Mockito.when;
 
 class AssistanceFacadeTest {
 
+    private static final Instant NOW = Instant.parse("2026-09-28T12:30:00Z");
+
     private final AssistanceRepository repository = mock(AssistanceRepository.class);
     private final ClientFacade clientFacade = mock(ClientFacade.class);
     private final List<Object> publishedEvents = new ArrayList<>();
@@ -33,7 +38,9 @@ class AssistanceFacadeTest {
             mock(StatusChangeRepository.class),
             clientFacade,
             new AssistanceFactory(),
-            publishedEvents::add
+            publishedEvents::add,
+            new RequestPolicy(Duration.ofMinutes(15), Duration.ofMinutes(5)),
+            Clock.fixed(NOW, ZoneOffset.UTC)
     );
 
     private final Client client = new Client(
@@ -57,17 +64,22 @@ class AssistanceFacadeTest {
     void creatingAnAssistancePublishesTheStatusChangeAndTheDispatchEvent() {
         when(clientFacade.find(client.getId())).thenReturn(client);
         when(clientFacade.findVehicle(bicycle.getId())).thenReturn(bicycle);
-        when(repository.save(any(AssistanceRequest.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(repository.saveAndFlush(any(AssistanceRequest.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        AssistanceRequest created = facade.request(
+        AssistanceCreation creation = facade.request(
                 client.getId(),
                 bicycle.getId(),
                 "Pinchadura",
                 "TIRE",
                 "TIRE_REPAIR",
                 -34.6037,
-                -58.3816
+                -58.3816,
+                "local-1",
+                NOW.minusSeconds(30)
         );
+        AssistanceRequest created = creation.assistance();
+        assertThat(creation.replayed()).isFalse();
+        assertThat(created.getIdempotencyKey()).isEqualTo("local-1");
 
         assertThat(created.getStatus()).isEqualTo(AssistanceStatus.REQUESTED);
         assertThat(publishedEvents).hasSize(2);
@@ -77,6 +89,36 @@ class AssistanceFacadeTest {
         });
         assertThat(publishedEvents.get(1)).isInstanceOfSatisfying(AssistanceRequestedEvent.class, event ->
                 assertThat(event.vehicleType()).isEqualTo(VehicleType.BICYCLE));
+    }
+
+    @Test
+    void aRepeatedIdempotencyKeyReturnsTheExistingAssistanceWithoutPublishingAnything() {
+        AssistanceRequest existing = storedAssistance();
+        when(repository.findByClient_IdAndIdempotencyKey(client.getId(), "local-1")).thenReturn(Optional.of(existing));
+
+        AssistanceCreation creation = facade.request(
+                client.getId(), bicycle.getId(), "Pinchadura", "TIRE", "TIRE_REPAIR", -34.6, -58.38, "local-1", null
+        );
+
+        assertThat(creation.replayed()).isTrue();
+        assertThat(creation.assistance()).isSameAs(existing);
+        assertThat(publishedEvents).isEmpty();
+    }
+
+    @Test
+    void aRequestThatWaitedTooLongOnThePhoneIsRejected() {
+        assertThatThrownBy(() -> facade.request(
+                client.getId(), bicycle.getId(), "Pinchadura", "TIRE", "TIRE_REPAIR", -34.6, -58.38,
+                "local-2", NOW.minus(Duration.ofMinutes(16))
+        )).isInstanceOf(RequestExpiredException.class);
+        assertThat(publishedEvents).isEmpty();
+    }
+
+    @Test
+    void aRequestWithoutIdempotencyKeyIsRejected() {
+        assertThatThrownBy(() -> facade.request(
+                client.getId(), bicycle.getId(), "Pinchadura", "TIRE", "TIRE_REPAIR", -34.6, -58.38, " ", null
+        )).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test

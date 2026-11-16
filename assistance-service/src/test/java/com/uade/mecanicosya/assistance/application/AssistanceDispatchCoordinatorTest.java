@@ -1,6 +1,8 @@
 package com.uade.mecanicosya.assistance.application;
 
 import com.uade.mecanicosya.assistance.domain.AssistanceRequest;
+import com.uade.mecanicosya.assistance.domain.AssistanceStatus;
+import com.uade.mecanicosya.assistance.domain.InvalidStatusTransitionException;
 import com.uade.mecanicosya.assistance.domain.Client;
 import com.uade.mecanicosya.assistance.domain.Vehicle;
 import com.uade.mecanicosya.assistance.domain.VehicleType;
@@ -44,7 +46,19 @@ class AssistanceDispatchCoordinatorTest {
     }
 
     @Test
-    void leavesTheAssistanceRequestedWhenThereIsNoCandidate() {
+    void waitsForTheMechanicsWhenTheAssistanceIsOffered() {
+        Instant expiresAt = Instant.parse("2026-09-28T12:02:00Z");
+        when(facade.find(assistance.getId())).thenReturn(assistance);
+        AssistanceDispatchCoordinator coordinator = coordinatorAnswering(new DispatchOutcome.Offered(expiresAt, 3));
+
+        coordinator.dispatch(assistance.getId());
+
+        verify(facade).awaitOffers(assistance.getId(), expiresAt);
+        verify(facade, never()).applyMatch(any(), any());
+    }
+
+    @Test
+    void marksTheAssistanceUnmatchedWhenThereIsNoCandidate() {
         when(facade.find(assistance.getId())).thenReturn(assistance);
         AssistanceDispatchCoordinator coordinator = coordinatorAnswering(
                 new DispatchOutcome.NoCandidate()
@@ -52,7 +66,59 @@ class AssistanceDispatchCoordinatorTest {
 
         coordinator.dispatch(assistance.getId());
 
+        verify(facade).markUnmatched(assistance.getId());
         verify(facade, never()).applyMatch(any(), any());
+    }
+
+    @Test
+    void anUnmatchedAssistanceIsPublishedAgain() {
+        AssistanceRequest unmatched = newAssistance();
+        unmatched.markUnmatched();
+        AssistanceRequest republished = newAssistance();
+        when(facade.find(unmatched.getId())).thenReturn(unmatched);
+        when(facade.republish(unmatched.getId())).thenReturn(republished);
+        AssistanceDispatchCoordinator coordinator = coordinatorAnswering(
+                new DispatchOutcome.Offered(Instant.parse("2026-09-28T12:02:00Z"), 1)
+        );
+
+        coordinator.dispatch(unmatched.getId());
+
+        verify(facade).republish(unmatched.getId());
+        assertThat(sentCommands).hasSize(1);
+    }
+
+    @Test
+    void aCancelledAssistanceIsNotDispatched() {
+        AssistanceRequest cancelled = newAssistance();
+        cancelled.cancel();
+        when(facade.find(cancelled.getId())).thenReturn(cancelled);
+        AssistanceDispatchCoordinator coordinator = coordinatorAnswering(new DispatchOutcome.NoCandidate());
+
+        assertThatThrownBy(() -> coordinator.dispatch(cancelled.getId()))
+                .isInstanceOf(InvalidStatusTransitionException.class);
+        assertThat(sentCommands).isEmpty();
+    }
+
+    @Test
+    void cancellingWithdrawsTheOffersEvenIfDispatchIsDown() {
+        List<UUID> cancelled = new ArrayList<>();
+        AssistanceDispatchCoordinator coordinator = new AssistanceDispatchCoordinator(facade, new DispatchPort() {
+            @Override
+            public DispatchOutcome dispatch(DispatchCommand command) {
+                throw new AssertionError("not expected");
+            }
+
+            @Override
+            public void cancel(UUID assistanceId) {
+                cancelled.add(assistanceId);
+                throw new DispatchUnavailableException("down", null);
+            }
+        });
+
+        assertThatCode(() -> coordinator.onStatusChanged(AssistanceStatusChangedEvent.of(
+                assistance.getId(), AssistanceStatus.REQUESTED, AssistanceStatus.CANCELLED
+        ))).doesNotThrowAnyException();
+        assertThat(cancelled).containsExactly(assistance.getId());
     }
 
     @Test
@@ -79,16 +145,29 @@ class AssistanceDispatchCoordinatorTest {
     }
 
     private AssistanceDispatchCoordinator coordinatorAnswering(DispatchOutcome outcome) {
-        return new AssistanceDispatchCoordinator(facade, command -> {
+        return new AssistanceDispatchCoordinator(facade, port(command -> {
             sentCommands.add(command);
             return outcome;
-        });
+        }));
     }
 
     private AssistanceDispatchCoordinator coordinatorFailingWith(RuntimeException failure) {
-        return new AssistanceDispatchCoordinator(facade, command -> {
+        return new AssistanceDispatchCoordinator(facade, port(command -> {
             throw failure;
-        });
+        }));
+    }
+
+    private static DispatchPort port(java.util.function.Function<DispatchCommand, DispatchOutcome> dispatch) {
+        return new DispatchPort() {
+            @Override
+            public DispatchOutcome dispatch(DispatchCommand command) {
+                return dispatch.apply(command);
+            }
+
+            @Override
+            public void cancel(UUID assistanceId) {
+            }
+        };
     }
 
     private static AssistanceRequest newAssistance() {

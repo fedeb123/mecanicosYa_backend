@@ -125,4 +125,40 @@ class AssistanceRequestTest {
         completed.complete();
         assertThatThrownBy(completed::cancel).isInstanceOf(InvalidStatusTransitionException.class);
     }
+
+    @Test
+    void anAssistanceNobodyAcceptedCanBePublishedAgain() {
+        AssistanceRequest assistance = newAssistance(bicycle);
+        assistance.awaitOffers(Instant.parse("2026-09-28T12:02:00Z"));
+        assistance.markUnmatched();
+
+        assertThat(assistance.getStatus()).isEqualTo(AssistanceStatus.UNMATCHED);
+        assertThat(assistance.getOffersExpireAt()).isNull();
+        assertThatThrownBy(() -> assistance.assignMechanic(UUID.randomUUID()))
+                .isInstanceOf(InvalidStatusTransitionException.class);
+
+        assistance.republish();
+        assertThat(assistance.getStatus()).isEqualTo(AssistanceStatus.REQUESTED);
+    }
+
+    @Test
+    void assigningTheSameMechanicTwiceIsHarmlessButAnotherOneIsAConflict() {
+        AssistanceRequest assistance = newAssistance(bicycle);
+        UUID mechanicId = UUID.randomUUID();
+        assistance.assignMechanic(mechanicId);
+        assistance.assignMechanic(mechanicId);
+
+        assertThat(assistance.getAssignedMechanicId()).isEqualTo(mechanicId);
+        assertThatThrownBy(() -> assistance.assignMechanic(UUID.randomUUID()))
+                .isInstanceOf(InvalidStatusTransitionException.class);
+    }
+
+    @Test
+    void cancellingTwiceIsNotAnError() {
+        AssistanceRequest assistance = newAssistance(bicycle);
+        assistance.cancel();
+        assistance.cancel();
+
+        assertThat(assistance.getStatus()).isEqualTo(AssistanceStatus.CANCELLED);
+    }
 }

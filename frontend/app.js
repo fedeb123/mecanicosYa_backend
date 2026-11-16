@@ -47,8 +47,11 @@ function remember(kind, item) {
 
 const newCorrelationId = () => 'front-' + Math.random().toString(36).slice(2, 10);
 
-async function api(service, method, path, body, correlationId = newCorrelationId()) {
-  const headers = { 'X-Correlation-Id': correlationId };
+// La app real genera la clave al crear el pedido y la repite en cada reintento.
+const newIdempotencyKey = () => (crypto.randomUUID ? crypto.randomUUID() : 'front-' + Date.now() + '-' + Math.random().toString(36).slice(2));
+
+async function api(service, method, path, body, correlationId = newCorrelationId(), extraHeaders = {}) {
+  const headers = { 'X-Correlation-Id': correlationId, ...extraHeaders };
   if (body !== undefined) headers['Content-Type'] = 'application/json';
   const started = performance.now();
   let status = 0;
@@ -131,7 +134,12 @@ function renderAssistance(assistance, dispatch, history) {
   let dispatchHtml;
   if (dispatch.ok) {
     const d = dispatch.data;
-    dispatchHtml = `${statusBadge(d.status)} ${d.distanceKm != null ? `a ${d.distanceKm.toFixed(2)} km` : ''} · ${formatDate(d.createdAt)}`;
+    const offers = (d.offers || []).map(o => {
+      const m = store.mechanics.find(x => x.id === o.mechanicId);
+      return `<div>${o.ranking}. ${m ? escapeHtml(m.name) : `<span class="mono">${escapeHtml(o.mechanicId)}</span>`} a ${o.distanceKm.toFixed(2)} km ${statusBadge(o.status)}</div>`;
+    }).join('');
+    const until = d.status === 'OFFERED' && d.offersExpireAt ? ` · se puede aceptar hasta ${formatDate(d.offersExpireAt)}` : '';
+    dispatchHtml = `${statusBadge(d.status)} ronda ${d.round}${until}${d.distanceKm != null ? ` · a ${d.distanceKm.toFixed(2)} km` : ''}${offers}`;
   } else if (dispatch.status === 404) {
     dispatchHtml = 'Todavía no hay despacho registrado.';
   } else {
@@ -372,15 +380,6 @@ async function loadAssistance(id, correlationId) {
   return { assistance, dispatch, history };
 }
 
-// Tras crearla, espera unos segundos a que salga de REQUESTED (el despacho corre al publicarse el evento).
-async function waitForDispatch(id, correlationId) {
-  for (let attempt = 0; attempt < 8; attempt++) {
-    const result = await api('assistance', 'GET', `/api/assistances/${id}`, undefined, correlationId);
-    if (!result.ok || result.data.status !== 'REQUESTED') return;
-    await sleep(750);
-  }
-}
-
 async function showAssistance(id, box, correlationId) {
   const { assistance, dispatch, history } = await loadAssistance(id, correlationId);
   if (!assistance.ok) return showError(box, assistance);
@@ -400,8 +399,10 @@ onSubmit('#form-assistance', async form => {
     requiredSkill: f.requiredSkill.value.trim(),
     latitude: num(f.latitude.value),
     longitude: num(f.longitude.value),
+    clientCreatedAt: new Date().toISOString(),
   };
-  const result = await api('assistance', 'POST', '/api/assistances', body, correlationId);
+  const result = await api('assistance', 'POST', '/api/assistances', body, correlationId,
+    { 'Idempotency-Key': newIdempotencyKey() });
   if (!result.ok) {
     showError(box, result);
     return;
@@ -409,10 +410,11 @@ onSubmit('#form-assistance', async form => {
   const id = result.data.id;
   remember('assistances', { id, label: `${body.problemType} · ${body.description.slice(0, 30)}` });
   $('#form-track [name=assistanceId]').value = id;
-  showInfo(box, `Asistencia creada (<span class="mono">${escapeHtml(id)}</span>), esperando el despacho… Correlation id: <span class="mono">${correlationId}</span>`);
-  await waitForDispatch(id, correlationId);
   await showAssistance(id, $('#track-result'), correlationId);
-  showInfo(box, `Asistencia creada. Mirá el resultado en "Seguimiento". Correlation id: <span class="mono">${correlationId}</span>`);
+  const state = result.data.status === 'UNMATCHED'
+    ? 'No hay mecánicos disponibles: quedó UNMATCHED.'
+    : 'Se ofreció a los mecánicos cercanos; aceptala desde "Ofertas del mecánico".';
+  showInfo(box, `Asistencia creada. ${state} Correlation id: <span class="mono">${correlationId}</span>`);
 });
 
 function selectedAssistanceId() {
@@ -439,6 +441,39 @@ $$('#form-track [data-action]').forEach(button => {
   }));
 });
 
+// ---------- ofertas ----------
+
+async function showOffers(mechanicId, box) {
+  const result = await api('dispatch', 'GET', `/api/dispatches/offers?mechanicId=${mechanicId}`);
+  if (!result.ok) return showError(box, result);
+  if (result.data.length === 0) return showInfo(box, 'Este mecánico no tiene ofertas abiertas.');
+  box.innerHTML = table(['Asistencia', 'Habilidad / vehículo', 'Distancia', 'Orden', 'Vence', ''], result.data.map(o => [
+    `<span class="mono">${escapeHtml(o.assistanceId)}</span>`,
+    `${escapeHtml(o.requiredSkill)} / ${escapeHtml(VEHICLE_LABELS[o.vehicleType] || o.vehicleType)}`,
+    `${o.distanceKm.toFixed(2)} km`,
+    String(o.ranking),
+    formatDate(o.expiresAt),
+    `<button type="button" data-offer="accept" data-id="${escapeHtml(o.assistanceId)}">Aceptar</button>
+     <button type="button" data-offer="decline" data-id="${escapeHtml(o.assistanceId)}" class="ghost">Pasar</button>`,
+  ]));
+  box.querySelectorAll('[data-offer]').forEach(button => button.addEventListener('click', () => withBusy(button, async () => {
+    const answer = await api('dispatch', 'POST', `/api/dispatches/${button.dataset.id}/${button.dataset.offer}`, { mechanicId });
+    await showOffers(mechanicId, box);
+    if (!answer.ok) {
+      box.insertAdjacentHTML('afterbegin', `<div class="message error">${escapeHtml(errorMessage(answer))}</div>`);
+    } else if (button.dataset.offer === 'accept') {
+      $('#form-track [name=assistanceId]').value = button.dataset.id;
+      box.insertAdjacentHTML('afterbegin', '<div class="message">Asistencia tomada. Mirala en "Seguimiento".</div>');
+    }
+  })));
+}
+
+onSubmit('#form-offers', async form => {
+  const mechanicId = form.elements.mechanicId.value;
+  if (!mechanicId) return showInfo($('#offers-result'), 'Elegí un mecánico.');
+  await showOffers(mechanicId, $('#offers-result'));
+});
+
 // ---------- demo ----------
 
 $('#btn-demo').addEventListener('click', event => withBusy(event.target, async () => {
@@ -450,25 +485,31 @@ $('#btn-demo').addEventListener('click', event => withBusy(event.target, async (
 
   step(`Correlation id: <span class="mono">${cid}</span>`);
   const ada = await api('mechanic', 'POST', '/api/mechanics', {
-    name: 'Ada Mecánica', email: uniqueEmail('ada'), latitude: -34.6038, longitude: -58.3820,
+    name: 'Ada Mecánica', email: uniqueEmail('ada'), latitude: -34.5800, longitude: -58.4255,
     skills: ['CHAIN_REPAIR', 'TIRE_REPAIR'], vehicleTypes: ['BICYCLE', 'E_BIKE'],
   }, cid);
   if (!ada.ok) return fail(ada);
   remember('mechanics', { id: ada.data.id, name: ada.data.name });
   const linus = await api('mechanic', 'POST', '/api/mechanics', {
-    name: 'Linus Bicis', email: uniqueEmail('linus'), latitude: -34.6400, longitude: -58.4400,
+    name: 'Linus Motos', email: uniqueEmail('linus'), latitude: -34.6400, longitude: -58.4400,
     skills: ['BRAKE_REPAIR'], vehicleTypes: ['MOTORCYCLE'],
   }, cid);
   if (!linus.ok) return fail(linus);
   remember('mechanics', { id: linus.data.id, name: linus.data.name });
-  step('✓ Registré a Ada Mecánica y Linus Bicis');
+  const grace = await api('mechanic', 'POST', '/api/mechanics', {
+    name: 'Grace Rodados', email: uniqueEmail('grace'), latitude: -34.5840, longitude: -58.4300,
+    skills: ['CHAIN_REPAIR'], vehicleTypes: ['BICYCLE'],
+  }, cid);
+  if (!grace.ok) return fail(grace);
+  remember('mechanics', { id: grace.data.id, name: grace.data.name });
+  step('✓ Registré a Ada Mecánica, Linus Motos y Grace Rodados');
 
-  for (const m of [ada.data, linus.data]) {
+  for (const m of [ada.data, linus.data, grace.data]) {
     const r = await api('mechanic', 'PATCH', `/api/mechanics/${m.id}/availability`,
       { available: true, latitude: m.latitude, longitude: m.longitude }, cid);
     if (!r.ok) return fail(r);
   }
-  step('✓ Los dos quedaron disponibles');
+  step('✓ Los tres quedaron disponibles');
 
   const client = await api('assistance', 'POST', '/api/clients',
     { fullName: 'Repartidor Demo', phone: '1155550000', email: uniqueEmail('repartidor') }, cid);
@@ -480,20 +521,35 @@ $('#btn-demo').addEventListener('click', event => withBusy(event.target, async (
   remember('vehicles', { id: vehicle.data.id, clientId: client.data.id, label: 'Bicicleta Trek FX 2' });
   step('✓ Registré al repartidor y su bicicleta');
 
-  const assistance = await api('assistance', 'POST', '/api/assistances', {
-    clientId: client.data.id, vehicleId: vehicle.data.id, description: 'Se cortó la cadena en el centro',
-    problemType: 'CHAIN', requiredSkill: 'CHAIN_REPAIR', latitude: -34.6037, longitude: -58.3816,
-  }, cid);
+  const key = newIdempotencyKey();
+  const request = {
+    clientId: client.data.id, vehicleId: vehicle.data.id, description: 'Se cortó la cadena en Palermo',
+    problemType: 'CHAIN', requiredSkill: 'CHAIN_REPAIR', latitude: -34.5795, longitude: -58.4250,
+    clientCreatedAt: new Date().toISOString(),
+  };
+  const assistance = await api('assistance', 'POST', '/api/assistances', request, cid, { 'Idempotency-Key': key });
   if (!assistance.ok) return fail(assistance);
-  remember('assistances', { id: assistance.data.id, label: 'CHAIN · Se cortó la cadena en el centro' });
-  step('✓ Pedí la asistencia, esperando el despacho…');
+  remember('assistances', { id: assistance.data.id, label: 'CHAIN · Se cortó la cadena en Palermo' });
+  const retry = await api('assistance', 'POST', '/api/assistances', request, cid, { 'Idempotency-Key': key });
+  step(`✓ Pedí la asistencia (${statusBadge(assistance.data.status)}). Un reintento con la misma clave devolvió HTTP ${retry.status} y el mismo pedido.`);
 
-  await waitForDispatch(assistance.data.id, cid);
+  const [adaAnswer, graceAnswer] = await Promise.all([
+    api('dispatch', 'POST', `/api/dispatches/${assistance.data.id}/accept`, { mechanicId: ada.data.id }, cid),
+    api('dispatch', 'POST', `/api/dispatches/${assistance.data.id}/accept`, { mechanicId: grace.data.id }, cid),
+  ]);
+  const answer = (name, r) => r.ok ? `${name} la tomó (HTTP ${r.status})` : `${name} llegó tarde (HTTP ${r.status} ${escapeHtml(r.data?.code || '')})`;
+  step(`✓ Ada y Grace aceptaron al mismo tiempo: ${answer('Ada', adaAnswer)}; ${answer('Grace', graceAnswer)}.`);
+
   const { assistance: current, dispatch, history } = await loadAssistance(assistance.data.id, cid);
   if (!current.ok) return fail(current);
-  step('✓ Listo. Se esperaba que la asigne a Ada (tiene CHAIN_REPAIR y bicicletas).');
   box.insertAdjacentHTML('beforeend', renderAssistance(current.data, dispatch, history));
   $('#form-track [name=assistanceId]').value = assistance.data.id;
+
+  // Los mecánicos de la demo se desconectan para no recibir los pedidos de la próxima corrida.
+  for (const m of [ada.data, linus.data, grace.data]) {
+    await api('mechanic', 'PATCH', `/api/mechanics/${m.id}/availability`,
+      { available: false, latitude: m.latitude, longitude: m.longitude }, cid);
+  }
 }));
 
 $('#btn-clear-store').addEventListener('click', () => {
