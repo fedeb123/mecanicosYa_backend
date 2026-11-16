@@ -79,7 +79,8 @@ class AssistanceFacadeTest {
                 -34.6037,
                 -58.3816,
                 "local-1",
-                NOW.minusSeconds(30)
+                NOW.minusSeconds(30),
+                null
         );
         AssistanceRequest created = creation.assistance();
         assertThat(creation.replayed()).isFalse();
@@ -101,7 +102,7 @@ class AssistanceFacadeTest {
         when(repository.findByClient_IdAndIdempotencyKey(client.getId(), "local-1")).thenReturn(Optional.of(existing));
 
         AssistanceCreation creation = facade.request(
-                client.getId(), bicycle.getId(), "Pinchadura", "TIRE", "TIRE_REPAIR", -34.6, -58.38, "local-1", null
+                client.getId(), bicycle.getId(), "Pinchadura", "TIRE", "TIRE_REPAIR", -34.6, -58.38, "local-1", null, null
         );
 
         assertThat(creation.replayed()).isTrue();
@@ -113,7 +114,7 @@ class AssistanceFacadeTest {
     void aRequestThatWaitedTooLongOnThePhoneIsRejected() {
         assertThatThrownBy(() -> facade.request(
                 client.getId(), bicycle.getId(), "Pinchadura", "TIRE", "TIRE_REPAIR", -34.6, -58.38,
-                "local-2", NOW.minus(Duration.ofMinutes(16))
+                "local-2", NOW.minus(Duration.ofMinutes(16)), null
         )).isInstanceOf(RequestExpiredException.class);
         assertThat(publishedEvents).isEmpty();
     }
@@ -121,7 +122,7 @@ class AssistanceFacadeTest {
     @Test
     void aRequestWithoutIdempotencyKeyIsRejected() {
         assertThatThrownBy(() -> facade.request(
-                client.getId(), bicycle.getId(), "Pinchadura", "TIRE", "TIRE_REPAIR", -34.6, -58.38, " ", null
+                client.getId(), bicycle.getId(), "Pinchadura", "TIRE", "TIRE_REPAIR", -34.6, -58.38, " ", null, null
         )).isInstanceOf(IllegalArgumentException.class);
     }
 

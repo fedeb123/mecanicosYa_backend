@@ -159,6 +159,7 @@ class AssistanceKafkaIntegrationTest {
                 -34.6037,
                 -58.3816,
                 key + "-" + UUID.randomUUID(),
+                null,
                 null
         );
     }

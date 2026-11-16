@@ -3,6 +3,8 @@ package com.uade.mecanicosya.assistance.api;
 import com.uade.mecanicosya.assistance.domain.AssistanceRequest;
 import com.uade.mecanicosya.assistance.domain.AssistanceStatus;
 import com.uade.mecanicosya.assistance.domain.StatusChange;
+import com.uade.mecanicosya.assistance.domain.TriageSource;
+import com.uade.mecanicosya.assistance.domain.Urgency;
 import com.uade.mecanicosya.assistance.domain.VehicleType;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
@@ -24,8 +26,8 @@ public final class AssistanceDtos {
             @NotNull UUID clientId,
             @NotNull UUID vehicleId,
             @NotBlank @Size(max = 1000) String description,
-            @NotBlank String problemType,
-            @NotBlank String requiredSkill,
+            @Size(max = 80) String problemType,
+            @Size(max = 80) String requiredSkill,
             @DecimalMin("-90.0") @DecimalMax("90.0") double latitude,
             @DecimalMin("-180.0") @DecimalMax("180.0") double longitude,
             Instant clientCreatedAt
@@ -52,7 +54,10 @@ public final class AssistanceDtos {
             Instant offersExpireAt,
             String idempotencyKey,
             Instant clientCreatedAt,
-            Instant createdAt
+            Instant createdAt,
+            Urgency urgency,
+            TriageSource triageSource,
+            Double triageConfidence
     ) {
         public static AssistanceResponse from(AssistanceRequest assistance) {
             return new AssistanceResponse(
@@ -72,7 +77,10 @@ public final class AssistanceDtos {
                     assistance.getOffersExpireAt(),
                     assistance.getIdempotencyKey(),
                     assistance.getClientCreatedAt(),
-                    assistance.getCreatedAt()
+                    assistance.getCreatedAt(),
+                    assistance.getUrgency(),
+                    assistance.getTriageSource(),
+                    assistance.getTriageConfidence()
             );
         }
     }

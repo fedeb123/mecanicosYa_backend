@@ -8,6 +8,7 @@ import com.uade.mecanicosya.assistance.api.AssistanceDtos.StatusChangeResponse;
 import com.uade.mecanicosya.assistance.application.AssistanceCreation;
 import com.uade.mecanicosya.assistance.application.AssistanceDispatchCoordinator;
 import com.uade.mecanicosya.assistance.application.AssistanceFacade;
+import com.uade.mecanicosya.assistance.application.AssistanceIntake;
 import com.uade.mecanicosya.assistance.domain.AssistanceRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -37,16 +38,24 @@ public class AssistanceController {
     static final String REPLAYED = "Idempotent-Replayed";
 
     private final AssistanceFacade facade;
+    private final AssistanceIntake intake;
     private final AssistanceDispatchCoordinator dispatchCoordinator;
 
-    public AssistanceController(AssistanceFacade facade, AssistanceDispatchCoordinator dispatchCoordinator) {
+    public AssistanceController(
+            AssistanceFacade facade,
+            AssistanceIntake intake,
+            AssistanceDispatchCoordinator dispatchCoordinator
+    ) {
         this.facade = facade;
+        this.intake = intake;
         this.dispatchCoordinator = dispatchCoordinator;
     }
 
     @PostMapping
     @Operation(summary = "Create an assistance request and offer it to nearby mechanics; a repeated "
-            + "Idempotency-Key returns the existing request with 200")
+            + "Idempotency-Key returns the existing request with 200",
+            description = "The description is classified (AI with keyword fallback) to get the urgency. "
+                    + "problemType and requiredSkill are optional: when missing, the classification fills them.")
     public ResponseEntity<AssistanceResponse> create(
             @Parameter(description = "Unique per request; the app reuses it on every retry")
             @RequestHeader(IDEMPOTENCY_KEY) String idempotencyKey,
@@ -54,7 +63,7 @@ public class AssistanceController {
     ) {
         AssistanceCreation creation;
         try {
-            creation = facade.request(
+            creation = intake.request(
                     request.clientId(),
                     request.vehicleId(),
                     request.description(),

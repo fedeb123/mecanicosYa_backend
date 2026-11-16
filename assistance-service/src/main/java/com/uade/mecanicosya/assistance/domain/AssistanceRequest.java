@@ -82,6 +82,16 @@ public class AssistanceRequest {
     /** Hasta cuándo los mecánicos pueden aceptar la ronda de ofertas actual. */
     private Instant offersExpireAt;
 
+    @Enumerated(EnumType.STRING)
+    @Column(length = 10)
+    private Urgency urgency;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private TriageSource triageSource;
+
+    private Double triageConfidence;
+
     @Version
     private long version;
 
@@ -296,5 +306,30 @@ public class AssistanceRequest {
 
     public Instant getOffersExpireAt() {
         return offersExpireAt;
+    }
+
+    /** Guarda la clasificación del texto del pedido (urgencia, quién la hizo y con qué confianza). */
+    public void recordTriage(Urgency urgency, TriageSource source, double confidence) {
+        if (urgency == null || source == null) {
+            throw new IllegalArgumentException("Urgency and source are required");
+        }
+        if (confidence < 0 || confidence > 1) {
+            throw new IllegalArgumentException("The confidence must be between 0 and 1");
+        }
+        this.urgency = urgency;
+        this.triageSource = source;
+        this.triageConfidence = confidence;
+    }
+
+    public Urgency getUrgency() {
+        return urgency;
+    }
+
+    public TriageSource getTriageSource() {
+        return triageSource;
+    }
+
+    public Double getTriageConfidence() {
+        return triageConfidence;
     }
 }
