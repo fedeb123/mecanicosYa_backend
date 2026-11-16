@@ -200,6 +200,24 @@ for name in ada grace; do
     assigned=$name
   fi
 done
+if [ "$assigned" = ada ]; then other=grace; else other=ada; fi
+echo "5. ${assigned} está en un trabajo: llega otro pedido y sólo se le ofrece a ${other}."
+second_assistance_id=$(curl -fsS -X POST "${ASSISTANCES}/api/assistances" \
+  -H "Authorization: Bearer ${rider_token}" \
+  -H 'Content-Type: application/json' \
+  -H "Idempotency-Key: ${idempotency_key}-2" \
+  -d "$assistance_body" | json_field id)
+wait_for_field "$rider_token" "${ASSISTANCES}/api/assistances/${second_assistance_id}" offersExpireAt
+echo "   Ofertas abiertas de ${assigned}, que está trabajando:"
+api "${token[$assigned]}" GET "${DISPATCH}/api/dispatches/offers"
+echo
+echo "   Ofertas abiertas de ${other}:"
+api "${token[$other]}" GET "${DISPATCH}/api/dispatches/offers"
+echo
+api "$rider_token" POST "${ASSISTANCES}/api/assistances/${second_assistance_id}/cancel" >/dev/null
+echo "   (el repartidor cancela ese segundo pedido)"
+echo
+
 echo "El repartidor no puede marcar el trabajo como empezado; ${assigned} sí:"
 curl -sS -o /dev/null -w 'repartidor: HTTP %{http_code}\n' -X POST \
   "${ASSISTANCES}/api/assistances/${assistance_id}/start" -H "Authorization: Bearer ${rider_token}"

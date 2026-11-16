@@ -2,7 +2,6 @@ package com.uade.mecanicosya.assistance.infrastructure.messaging;
 
 import com.uade.mecanicosya.assistance.application.AssistanceRequestedEvent;
 import com.uade.mecanicosya.assistance.application.AssistanceStatusChangedEvent;
-import com.uade.mecanicosya.assistance.domain.AssistanceStatus;
 import com.uade.mecanicosya.shared.messaging.Outbox;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
@@ -12,7 +11,7 @@ import java.util.UUID;
 
 /**
  * Traduce los eventos de dominio a eventos de integración y los deja en el outbox. Escucha dentro de la transacción
- * que creó o canceló el pedido: si esa transacción se revierte, el evento no sale.
+ * que creó, canceló o terminó el pedido: si esa transacción se revierte, el evento no sale.
  */
 @Component
 public class AssistanceEventPublisher {
@@ -42,14 +41,21 @@ public class AssistanceEventPublisher {
 
     @EventListener
     public void onStatusChanged(AssistanceStatusChangedEvent event) {
-        if (event.toStatus() != AssistanceStatus.CANCELLED) {
-            return;
+        switch (event.toStatus()) {
+            case CANCELLED -> outbox.publish(Topics.ASSISTANCE_EVENTS, event.assistanceId(), new AssistanceEvents.Cancelled(
+                    UUID.randomUUID(),
+                    AssistanceEvents.CANCELLED,
+                    clock.instant(),
+                    event.assistanceId()
+            ));
+            case COMPLETED -> outbox.publish(Topics.ASSISTANCE_EVENTS, event.assistanceId(), new AssistanceEvents.Completed(
+                    UUID.randomUUID(),
+                    AssistanceEvents.COMPLETED,
+                    clock.instant(),
+                    event.assistanceId()
+            ));
+            default -> {
+            }
         }
-        outbox.publish(Topics.ASSISTANCE_EVENTS, event.assistanceId(), new AssistanceEvents.Cancelled(
-                UUID.randomUUID(),
-                AssistanceEvents.CANCELLED,
-                clock.instant(),
-                event.assistanceId()
-        ));
     }
 }

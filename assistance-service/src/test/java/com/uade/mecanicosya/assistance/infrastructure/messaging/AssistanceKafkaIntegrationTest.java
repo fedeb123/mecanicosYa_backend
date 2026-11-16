@@ -131,6 +131,21 @@ class AssistanceKafkaIntegrationTest {
     }
 
     @Test
+    void aCompletedAssistanceIsPublishedSoDispatchFreesTheMechanic() {
+        AssistanceRequest assistance = request("kafka-key-4").assistance();
+        assistanceFacade.assign(assistance.getId(), UUID.randomUUID());
+        assistanceFacade.start(assistance.getId());
+        assistanceFacade.complete(assistance.getId());
+
+        ConsumerRecord<String, String> record = firstRecord(
+                Topics.ASSISTANCE_EVENTS, assistance.getId().toString(), "ASSISTANCE_COMPLETED");
+
+        assertThat(record.value())
+                .contains("\"type\":\"ASSISTANCE_COMPLETED\"")
+                .contains(assistance.getId().toString());
+    }
+
+    @Test
     void aBrokenMessageGoesToTheDeadLetterTopicAndTheNextOneIsProcessed() {
         AssistanceRequest assistance = request("kafka-key-3").assistance();
 
@@ -169,6 +184,10 @@ class AssistanceKafkaIntegrationTest {
     }
 
     private static ConsumerRecord<String, String> firstRecord(String topic, String key) {
+        return firstRecord(topic, key, null);
+    }
+
+    private static ConsumerRecord<String, String> firstRecord(String topic, String key, String eventType) {
         try (KafkaConsumer<String, String> consumer = new KafkaConsumer<>(Map.of(
                 ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, KAFKA.getBootstrapServers(),
                 ConsumerConfig.GROUP_ID_CONFIG, "test-" + UUID.randomUUID(),
@@ -180,7 +199,7 @@ class AssistanceKafkaIntegrationTest {
             List<ConsumerRecord<String, String>> found = new ArrayList<>();
             await().atMost(Duration.ofSeconds(20)).until(() -> {
                 consumer.poll(Duration.ofMillis(200)).forEach(record -> {
-                    if (key.equals(record.key())) {
+                    if (key.equals(record.key()) && (eventType == null || eventType.equals(header(record, "eventType")))) {
                         found.add(record);
                     }
                 });

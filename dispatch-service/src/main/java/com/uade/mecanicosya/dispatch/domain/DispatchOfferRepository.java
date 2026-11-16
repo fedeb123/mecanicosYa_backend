@@ -16,6 +16,9 @@ public interface DispatchOfferRepository extends JpaRepository<DispatchOffer, UU
 
     List<DispatchOffer> findByAssistanceIdAndRoundOrderByRankingAsc(UUID assistanceId, int round);
 
+    /**
+     * Las ofertas que el mecánico puede aceptar ahora. Si está en un trabajo, no ve ninguna hasta terminarlo.
+     */
     @Query("""
             select new com.uade.mecanicosya.dispatch.domain.OpenOffer(
                    d.assistanceId, o.mechanicId, d.requiredSkill, d.vehicleType, d.latitude, d.longitude,
@@ -27,6 +30,12 @@ public interface DispatchOfferRepository extends JpaRepository<DispatchOffer, UU
                and o.status = com.uade.mecanicosya.dispatch.domain.OfferStatus.PENDING
                and d.status = com.uade.mecanicosya.dispatch.domain.DispatchStatus.OFFERED
                and d.offersExpireAt > :now
+               and not exists (
+                   select 1
+                     from DispatchMatch job
+                    where job.mechanicId = :mechanicId
+                      and job.status = com.uade.mecanicosya.dispatch.domain.DispatchStatus.MATCHED
+                      and job.completedAt is null)
              order by d.offersExpireAt asc
             """)
     List<OpenOffer> findOpenOffers(@Param("mechanicId") UUID mechanicId, @Param("now") Instant now);

@@ -184,6 +184,55 @@ class OfferAcceptanceConcurrencyTest {
                 });
     }
 
+    @Test
+    void aBusyMechanicSeesNoOffersAndCannotAcceptUntilTheJobIsCompleted() {
+        UUID first = offeredAssistance();
+        UUID second = offeredAssistance();
+        UUID mechanicId = mechanics.getFirst().id();
+        facade.accept(first, mechanicId);
+
+        assertThat(facade.openOffers(mechanicId)).isEmpty();
+        assertThatThrownBy(() -> facade.accept(second, mechanicId)).isInstanceOf(MechanicBusyException.class);
+        assertThat(repository.findById(second).orElseThrow().getStatus()).isEqualTo(DispatchStatus.OFFERED);
+        UUID third = offeredAssistance();
+        assertThat(offerRepository.findByAssistanceIdAndRoundOrderByRankingAsc(third, 1))
+                .extracting(offer -> offer.getMechanicId())
+                .hasSize(4)
+                .doesNotContain(mechanicId);
+
+        facade.complete(first);
+        facade.complete(first);
+
+        assertThat(repository.findById(first).orElseThrow().getCompletedAt()).isNotNull();
+        assertThat(facade.openOffers(mechanicId)).extracting(offer -> offer.assistanceId()).containsExactly(second);
+        assertThat(facade.accept(second, mechanicId).getMechanicId()).isEqualTo(mechanicId);
+    }
+
+    @Test
+    void aMechanicAcceptingTwoAssistancesAtOnceKeepsOnlyOne() throws Exception {
+        UUID first = offeredAssistance();
+        UUID second = offeredAssistance();
+        UUID mechanicId = mechanics.getFirst().id();
+
+        List<Future<UUID>> attempts = runTogether(List.of(
+                () -> facade.accept(first, mechanicId).getAssistanceId(),
+                () -> facade.accept(second, mechanicId).getAssistanceId()
+        ));
+
+        List<UUID> taken = new ArrayList<>();
+        for (Future<UUID> attempt : attempts) {
+            try {
+                taken.add(attempt.get());
+            } catch (java.util.concurrent.ExecutionException exception) {
+                assertThat(exception.getCause()).isInstanceOf(MechanicBusyException.class);
+            }
+        }
+        assertThat(taken).hasSize(1);
+        UUID other = taken.getFirst().equals(first) ? second : first;
+        assertThat(repository.findById(other).orElseThrow().getStatus()).isEqualTo(DispatchStatus.OFFERED);
+        verify(assignmentPort, times(1)).assign(any(), eq(mechanicId));
+    }
+
     private UUID offeredAssistance() {
         UUID assistanceId = UUID.randomUUID();
         DispatchMatch dispatch = facade.process(new DispatchCommand(assistanceId, "CHAIN_REPAIR", -34.6037, -58.3816, "BICYCLE"));

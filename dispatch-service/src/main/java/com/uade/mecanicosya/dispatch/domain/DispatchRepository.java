@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
@@ -47,4 +48,26 @@ public interface DispatchRepository extends JpaRepository<DispatchMatch, UUID> {
     );
 
     List<DispatchMatch> findByStatusAndOffersExpireAtLessThanEqual(DispatchStatus status, Instant now);
+
+    /**
+     * ¿El mecánico tiene un trabajo aceptado y sin terminar? Un mecánico ocupado no recibe ofertas ni acepta otras.
+     */
+    @Query("""
+            select count(d) > 0
+              from DispatchMatch d
+             where d.mechanicId = :mechanicId
+               and d.status = com.uade.mecanicosya.dispatch.domain.DispatchStatus.MATCHED
+               and d.completedAt is null
+            """)
+    boolean hasActiveJob(@Param("mechanicId") UUID mechanicId);
+
+    /** De los mecánicos dados, los que están en un trabajo. */
+    @Query("""
+            select d.mechanicId
+              from DispatchMatch d
+             where d.mechanicId in :mechanicIds
+               and d.status = com.uade.mecanicosya.dispatch.domain.DispatchStatus.MATCHED
+               and d.completedAt is null
+            """)
+    List<UUID> findBusyMechanics(@Param("mechanicIds") Collection<UUID> mechanicIds);
 }

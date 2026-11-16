@@ -144,6 +144,42 @@ class DispatchFacadeTest {
     }
 
     @Test
+    void aBusyMechanicIsNotOfferedTheAssistance() {
+        MechanicCandidate busy = candidate(-34.6038, -58.3817);
+        MechanicCandidate free = candidate(-34.6300, -58.4100);
+        when(repository.findById(assistanceId)).thenReturn(Optional.empty());
+        when(repository.save(any(DispatchMatch.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(mechanicDirectory.findCandidates("CHAIN_REPAIR", "BICYCLE")).thenReturn(List.of(busy, free));
+        when(repository.findBusyMechanics(any())).thenReturn(List.of(busy.id()));
+
+        facade.process(command("CHAIN_REPAIR", "BICYCLE"));
+
+        ArgumentCaptor<DispatchOffer> offers = ArgumentCaptor.forClass(DispatchOffer.class);
+        verify(offerRepository).save(offers.capture());
+        assertThat(offers.getValue().getMechanicId()).isEqualTo(free.id());
+    }
+
+    @Test
+    void aBusyMechanicCannotAcceptAnotherAssistance() {
+        UUID mechanicId = UUID.randomUUID();
+        when(repository.findById(assistanceId)).thenReturn(Optional.of(offered(NOW.plusSeconds(60))));
+        when(offerRepository.findByAssistanceIdAndRoundAndMechanicId(assistanceId, 1, mechanicId))
+                .thenReturn(Optional.of(new DispatchOffer(assistanceId, 1, mechanicId, 0.5, 1, NOW)));
+        when(repository.hasActiveJob(mechanicId)).thenReturn(true);
+
+        assertThatThrownBy(() -> facade.accept(assistanceId, mechanicId)).isInstanceOf(MechanicBusyException.class);
+        verify(repository, never()).claim(any(), anyInt(), any(), anyDouble(), any(), any());
+        verify(assignmentPort, never()).assign(any(), any());
+    }
+
+    @Test
+    void onlyAnAcceptedAssistanceCanBeCompleted() {
+        when(repository.findById(assistanceId)).thenReturn(Optional.of(offered(NOW.plusSeconds(60))));
+
+        assertThatThrownBy(() -> facade.complete(assistanceId)).isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
     void declineIsIdempotent() {
         UUID mechanicId = UUID.randomUUID();
         DispatchOffer offer = new DispatchOffer(assistanceId, 1, mechanicId, 0.5, 1, NOW);
