@@ -13,6 +13,8 @@ public final class AssistanceEvents {
 
     public static final String REQUESTED = "ASSISTANCE_REQUESTED";
     public static final String CANCELLED = "ASSISTANCE_CANCELLED";
+    /** El mecánico terminó el trabajo: dispatch-service lo libera para que reciba ofertas otra vez. */
+    public static final String COMPLETED = "ASSISTANCE_COMPLETED";
     public static final String RATED = "ASSISTANCE_RATED";
 
     private AssistanceEvents() {
@@ -27,11 +29,21 @@ public final class AssistanceEvents {
             String problemType,
             String requiredSkill,
             double latitude,
-            double longitude
+            double longitude,
+            /** MOBILE, WORKSHOP o null (cualquiera): dispatch solo ofrece a mecánicos de ese tipo. */
+            String mechanicKind
     ) implements IntegrationEvent {
     }
 
     public record Cancelled(
+            UUID eventId,
+            String type,
+            Instant occurredAt,
+            UUID assistanceId
+    ) implements IntegrationEvent {
+    }
+
+    public record Completed(
             UUID eventId,
             String type,
             Instant occurredAt,

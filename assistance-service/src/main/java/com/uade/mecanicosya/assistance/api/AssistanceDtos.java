@@ -12,6 +12,7 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 import java.time.Instant;
@@ -31,7 +32,9 @@ public final class AssistanceDtos {
             @Size(max = 80) String requiredSkill,
             @DecimalMin("-90.0") @DecimalMax("90.0") double latitude,
             @DecimalMin("-180.0") @DecimalMax("180.0") double longitude,
-            Instant clientCreatedAt
+            Instant clientCreatedAt,
+            /** MOBILE (que vaya un mecánico), WORKSHOP (ir a un taller) o null (cualquiera). */
+            @Pattern(regexp = "MOBILE|WORKSHOP") String mechanicKind
     ) {
     }
 
@@ -50,6 +53,9 @@ public final class AssistanceDtos {
             double longitude,
             AssistanceStatus status,
             UUID assignedMechanicId,
+            String preferredMechanicKind,
+            Integer assignedEtaMinutes,
+            Double assignedDistanceKm,
             Integer rating,
             String ratingComment,
             Instant offersExpireAt,
@@ -73,6 +79,9 @@ public final class AssistanceDtos {
                     assistance.getLongitude(),
                     assistance.getStatus(),
                     assistance.getAssignedMechanicId(),
+                    assistance.getPreferredMechanicKind(),
+                    assistance.getAssignedEtaMinutes(),
+                    assistance.getAssignedDistanceKm(),
                     assistance.getRating(),
                     assistance.getRatingComment(),
                     assistance.getOffersExpireAt(),

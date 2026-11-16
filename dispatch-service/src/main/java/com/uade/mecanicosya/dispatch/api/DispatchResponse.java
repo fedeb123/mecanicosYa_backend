@@ -19,6 +19,7 @@ public record DispatchResponse(
         int round,
         Instant offersExpireAt,
         List<OfferSummary> offers,
+        Instant completedAt,
         Instant createdAt
 ) {
 
@@ -32,6 +33,7 @@ public record DispatchResponse(
                 match.getRound(),
                 match.getOffersExpireAt(),
                 offers.stream().map(OfferSummary::from).toList(),
+                match.getCompletedAt(),
                 match.getCreatedAt()
         );
     }

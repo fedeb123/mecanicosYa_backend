@@ -33,6 +33,8 @@ public class AssistanceConfiguration {
         String mechanic = Role.MECHANIC.name();
         String admin = Role.ADMIN.name();
         return apiSecurity.filterChain(http, authorize -> authorize
+                // El WSDL es el contrato del servicio SOAP: se lee sin token. Los mensajes a /ws piden token.
+                .requestMatchers(HttpMethod.GET, "/ws/triage.wsdl").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/clients").hasRole(rider)
                 .requestMatchers(HttpMethod.POST, "/api/assistances", "/api/assistances/cancel-by-key").hasRole(rider)
                 .requestMatchers(HttpMethod.POST, "/api/assistances/*/assign").hasRole(Role.SERVICE.name())

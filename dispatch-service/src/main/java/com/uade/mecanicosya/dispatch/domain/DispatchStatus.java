@@ -3,7 +3,7 @@ package com.uade.mecanicosya.dispatch.domain;
 public enum DispatchStatus {
     /** El pedido se ofreció a los candidatos y espera que alguno lo acepte. */
     OFFERED,
-    /** Un mecánico aceptó la oferta. */
+    /** Un mecánico aceptó la oferta. Cuando termina el trabajo, el despacho guarda {@code completedAt}. */
     MATCHED,
     /** No había ningún candidato al momento del pedido. */
     NO_CANDIDATE,

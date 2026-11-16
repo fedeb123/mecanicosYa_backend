@@ -18,7 +18,8 @@ public record AssistanceRequestedEvent(
         String problemType,
         double latitude,
         double longitude,
-        String requiredSkill
+        String requiredSkill,
+        String preferredMechanicKind
 ) {
     public static AssistanceRequestedEvent from(AssistanceRequest assistance) {
         return new AssistanceRequestedEvent(
@@ -33,7 +34,8 @@ public record AssistanceRequestedEvent(
                 assistance.getProblemType(),
                 assistance.getLatitude(),
                 assistance.getLongitude(),
-                assistance.getRequiredSkill()
+                assistance.getRequiredSkill(),
+                assistance.getPreferredMechanicKind()
         );
     }
 }

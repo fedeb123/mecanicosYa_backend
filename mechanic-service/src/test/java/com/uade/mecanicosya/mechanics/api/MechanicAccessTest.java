@@ -118,6 +118,41 @@ class MechanicAccessTest {
     }
 
     @Test
+    void aRiderSeesAvailableMechanicsNearbyWithoutTheirEmail() throws Exception {
+        UUID id = UUID.randomUUID();
+        String mechanic = TestJwt.pendingMechanic(id);
+        send("POST", "/api/mechanics", PROFILE, mechanic);
+        send("POST", "/api/mechanics/" + id + "/approve", null, TestJwt.admin());
+        String rider = TestJwt.rider(UUID.randomUUID());
+        String obelisco = "/api/mechanics/nearby?latitude=-34.6040&longitude=-58.3820";
+
+        assertThat(send("GET", obelisco, null, rider).body()).doesNotContain(id.toString());
+
+        send("PATCH", "/api/mechanics/" + id + "/availability", AVAILABLE, mechanic);
+        HttpResponse<String> nearby = send("GET", obelisco, null, rider);
+        assertThat(nearby.statusCode()).isEqualTo(200);
+        assertThat(nearby.body()).contains(id.toString()).doesNotContain("email");
+        assertThat(send("GET", "/api/mechanics/nearby?latitude=-34.9&longitude=-57.95", null, rider).body())
+                .doesNotContain(id.toString());
+        assertThat(send("GET", obelisco, null, TestJwt.approvedMechanic(id)).statusCode()).isEqualTo(403);
+    }
+
+    @Test
+    void aWorkshopNeedsAnAddressAndAPhone() throws Exception {
+        String incomplete = """
+                {"name":"Taller Sur","kind":"WORKSHOP","latitude":-34.62,"longitude":-58.37,"skills":["CHAIN_REPAIR"]}""";
+        String complete = """
+                {"name":"Taller Sur","kind":"WORKSHOP","address":"Defensa 1200","phone":"1144443333",
+                "latitude":-34.62,"longitude":-58.37,"skills":["CHAIN_REPAIR"]}""";
+
+        assertThat(send("POST", "/api/mechanics", incomplete, TestJwt.pendingMechanic(UUID.randomUUID())).statusCode())
+                .isEqualTo(400);
+        HttpResponse<String> created = send("POST", "/api/mechanics", complete, TestJwt.pendingMechanic(UUID.randomUUID()));
+        assertThat(created.statusCode()).isEqualTo(201);
+        assertThat(created.body()).contains("\"kind\":\"WORKSHOP\"").contains("\"address\":\"Defensa 1200\"");
+    }
+
+    @Test
     void anAccountCreatesASingleProfile() throws Exception {
         String mechanic = TestJwt.pendingMechanic(UUID.randomUUID());
 

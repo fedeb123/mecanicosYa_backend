@@ -48,6 +48,19 @@
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
         <dependency>
+            <!-- Servicio SOAP de clasificación (WSDL en /ws/triage.wsdl) -->
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webservices</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>wsdl4j</groupId>
+            <artifactId>wsdl4j</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jaxb</groupId>
+            <artifactId>jaxb-runtime</artifactId>
+        </dependency>
+        <dependency>
             <!-- Cliente oficial de la API de Claude, para clasificar los pedidos -->
             <groupId>com.anthropic</groupId>
             <artifactId>anthropic-java</artifactId>

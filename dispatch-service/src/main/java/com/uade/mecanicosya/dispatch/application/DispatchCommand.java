@@ -7,7 +7,13 @@ public record DispatchCommand(
         String requiredSkill,
         double latitude,
         double longitude,
-        String vehicleType
+        String vehicleType,
+        /** MOBILE, WORKSHOP o null (cualquiera). */
+        String mechanicKind
 ) {
+    public DispatchCommand(UUID assistanceId, String requiredSkill, double latitude, double longitude,
+                           String vehicleType) {
+        this(assistanceId, requiredSkill, latitude, longitude, vehicleType, null);
+    }
 }
 

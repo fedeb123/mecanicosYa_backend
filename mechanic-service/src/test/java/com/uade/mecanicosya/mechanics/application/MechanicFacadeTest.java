@@ -76,8 +76,8 @@ class MechanicFacadeTest {
     void anAccountHasASingleProfile() {
         when(repository.existsById(mechanic.getId())).thenReturn(true);
 
-        assertThatThrownBy(() -> facade.register(mechanic.getId(), "Ada", "ada@example.com", 0, 0,
-                Set.of("CHAIN_REPAIR"), null)).isInstanceOf(MechanicAlreadyRegisteredException.class);
+        assertThatThrownBy(() -> facade.register(mechanic.getId(), "Ada", "ada@example.com", null, 0, 0,
+                Set.of("CHAIN_REPAIR"), null, null, null)).isInstanceOf(MechanicAlreadyRegisteredException.class);
         verify(repository, never()).save(any(Mechanic.class));
     }
 }

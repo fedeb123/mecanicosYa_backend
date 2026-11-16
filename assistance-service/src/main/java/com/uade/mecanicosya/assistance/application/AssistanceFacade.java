@@ -74,6 +74,25 @@ public class AssistanceFacade {
             Instant clientCreatedAt,
             Triage triage
     ) {
+        return request(clientId, vehicleId, description, problemType, requiredSkill, latitude, longitude,
+                idempotencyKey, clientCreatedAt, triage, null);
+    }
+
+    /** Igual, con la preferencia del repartidor: MOBILE, WORKSHOP o null (cualquiera). */
+    @Transactional
+    public AssistanceCreation request(
+            UUID clientId,
+            UUID vehicleId,
+            String description,
+            String problemType,
+            String requiredSkill,
+            double latitude,
+            double longitude,
+            String idempotencyKey,
+            Instant clientCreatedAt,
+            Triage triage,
+            String preferredMechanicKind
+    ) {
         if (idempotencyKey == null || idempotencyKey.isBlank() || idempotencyKey.length() > MAX_KEY_LENGTH) {
             throw new IllegalArgumentException("The idempotency key must have between 1 and " + MAX_KEY_LENGTH + " characters");
         }
@@ -98,6 +117,7 @@ public class AssistanceFacade {
         if (triage != null) {
             assistance.recordTriage(triage.urgency(), triage.source(), triage.confidence());
         }
+        assistance.preferMechanicKind(preferredMechanicKind);
         // saveAndFlush: si otro reintento con la misma clave ganó la carrera, la restricción única salta acá.
         AssistanceRequest saved = repository.saveAndFlush(assistance);
         applicationEventPublisher.publishEvent(
@@ -169,7 +189,12 @@ public class AssistanceFacade {
      */
     @Transactional
     public AssistanceRequest assign(UUID assistanceId, UUID mechanicId) {
-        return transition(assistanceId, assistance -> assistance.assignMechanic(mechanicId));
+        return assign(assistanceId, mechanicId, null, null);
+    }
+
+    @Transactional
+    public AssistanceRequest assign(UUID assistanceId, UUID mechanicId, Integer etaMinutes, Double distanceKm) {
+        return transition(assistanceId, assistance -> assistance.assignMechanic(mechanicId, etaMinutes, distanceKm));
     }
 
     @Transactional

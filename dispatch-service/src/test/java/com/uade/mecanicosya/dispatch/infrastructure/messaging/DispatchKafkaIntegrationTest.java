@@ -127,6 +127,24 @@ class DispatchKafkaIntegrationTest {
         });
     }
 
+    @Test
+    void aCompletedAssistanceFreesTheMechanicForNewOffers() {
+        UUID assistanceId = UUID.randomUUID();
+        UUID mechanicId = mechanics.getFirst().id();
+        send(assistanceId, requested(assistanceId));
+        await().atMost(Duration.ofSeconds(15)).ignoreExceptions().untilAsserted(() ->
+                assertThat(facade.find(assistanceId).getStatus()).isEqualTo(DispatchStatus.OFFERED));
+        facade.accept(assistanceId, mechanicId);
+
+        send(assistanceId, """
+                {"type":"ASSISTANCE_COMPLETED","assistanceId":"%s"}
+                """.formatted(assistanceId));
+
+        await().atMost(Duration.ofSeconds(15)).ignoreExceptions().untilAsserted(() ->
+                assertThat(facade.find(assistanceId).getCompletedAt()).isNotNull());
+        assertThat(facade.find(assistanceId).isActiveJob()).isFalse();
+    }
+
     private List<String> eventsOf(UUID assistanceId) {
         return outbox.findByTopicOrderByIdAsc(Topics.DISPATCH_EVENTS).stream()
                 .filter(message -> message.getMessageKey().equals(assistanceId.toString()))

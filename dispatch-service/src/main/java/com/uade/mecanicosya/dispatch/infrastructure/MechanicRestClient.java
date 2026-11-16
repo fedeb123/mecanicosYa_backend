@@ -44,12 +44,18 @@ public class MechanicRestClient implements MechanicDirectory {
 
     @Override
     public List<MechanicCandidate> findCandidates(String skill, String vehicleType) {
+        return findCandidates(skill, vehicleType, null);
+    }
+
+    @Override
+    public List<MechanicCandidate> findCandidates(String skill, String vehicleType, String mechanicKind) {
         try {
             List<MechanicCandidate> candidates = restClient.get()
                     .uri(uriBuilder -> uriBuilder
                             .path("/api/mechanics/candidates")
                             .queryParam("skill", skill)
                             .queryParamIfPresent("vehicleType", Optional.ofNullable(vehicleType))
+                            .queryParamIfPresent("kind", Optional.ofNullable(mechanicKind))
                             .build())
                     .retrieve()
                     .body(new ParameterizedTypeReference<>() {

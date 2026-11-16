@@ -38,7 +38,8 @@ public class AssistanceDispatchCoordinator {
                 assistance.getRequiredSkill(),
                 assistance.getLatitude(),
                 assistance.getLongitude(),
-                assistance.getVehicleType()
+                assistance.getVehicleType(),
+                assistance.getPreferredMechanicKind()
         ));
         switch (outcome) {
             case DispatchOutcome.Offered(Instant expiresAt, int offers) -> {

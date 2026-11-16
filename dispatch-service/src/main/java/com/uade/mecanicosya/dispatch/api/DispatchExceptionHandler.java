@@ -3,6 +3,7 @@ package com.uade.mecanicosya.dispatch.api;
 import com.uade.mecanicosya.dispatch.application.AssistanceClosedException;
 import com.uade.mecanicosya.dispatch.application.AssistanceServiceUnavailableException;
 import com.uade.mecanicosya.dispatch.application.DispatchNotFoundException;
+import com.uade.mecanicosya.dispatch.application.MechanicBusyException;
 import com.uade.mecanicosya.dispatch.application.MechanicDirectoryUnavailableException;
 import com.uade.mecanicosya.dispatch.application.OfferAlreadyTakenException;
 import com.uade.mecanicosya.dispatch.application.OfferExpiredException;
@@ -42,6 +43,11 @@ public class DispatchExceptionHandler {
     @ExceptionHandler(OfferExpiredException.class)
     ProblemDetail expired(OfferExpiredException exception) {
         return coded(HttpStatus.CONFLICT, "Offer expired", "OFFER_EXPIRED", exception);
+    }
+
+    @ExceptionHandler(MechanicBusyException.class)
+    ProblemDetail busy(MechanicBusyException exception) {
+        return coded(HttpStatus.CONFLICT, "Mechanic busy", "MECHANIC_BUSY", exception);
     }
 
     @ExceptionHandler(AssistanceClosedException.class)

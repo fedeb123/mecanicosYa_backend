@@ -96,11 +96,11 @@ done
 
 # El perfil se crea con el id y el email del token.
 api "${token[ada]}" POST "${MECHANICS}/api/mechanics" \
-  '{"name":"Ada Mecánica","latitude":-34.5800,"longitude":-58.4255,"skills":["CHAIN_REPAIR","TIRE_REPAIR"],"vehicleTypes":["BICYCLE","E_BIKE"]}' >/dev/null
+  '{"name":"Ada Mecánica","phone":"11 5555 0101","latitude":-34.5800,"longitude":-58.4255,"skills":["CHAIN_REPAIR","TIRE_REPAIR"],"vehicleTypes":["BICYCLE","E_BIKE"]}' >/dev/null
 api "${token[linus]}" POST "${MECHANICS}/api/mechanics" \
-  '{"name":"Linus Motos","latitude":-34.6400,"longitude":-58.4400,"skills":["BRAKE_REPAIR"],"vehicleTypes":["MOTORCYCLE"]}' >/dev/null
+  '{"name":"Linus Motos","phone":"11 5555 0102","latitude":-34.6400,"longitude":-58.4400,"skills":["BRAKE_REPAIR"],"vehicleTypes":["MOTORCYCLE"]}' >/dev/null
 api "${token[grace]}" POST "${MECHANICS}/api/mechanics" \
-  '{"name":"Grace Rodados","latitude":-34.5840,"longitude":-58.4300,"skills":["CHAIN_REPAIR"],"vehicleTypes":["BICYCLE"]}' >/dev/null
+  '{"name":"Grace Rodados","phone":"11 5555 0103","latitude":-34.5840,"longitude":-58.4300,"skills":["CHAIN_REPAIR"],"vehicleTypes":["BICYCLE"]}' >/dev/null
 
 echo "   Ada todavía no fue aprobada: ponerse disponible le da"
 curl -sS -o /dev/null -w '   HTTP %{http_code}\n' -X PATCH "${MECHANICS}/api/mechanics/${id[ada]}/availability" \
@@ -200,6 +200,24 @@ for name in ada grace; do
     assigned=$name
   fi
 done
+if [ "$assigned" = ada ]; then other=grace; else other=ada; fi
+echo "5. ${assigned} está en un trabajo: llega otro pedido y sólo se le ofrece a ${other}."
+second_assistance_id=$(curl -fsS -X POST "${ASSISTANCES}/api/assistances" \
+  -H "Authorization: Bearer ${rider_token}" \
+  -H 'Content-Type: application/json' \
+  -H "Idempotency-Key: ${idempotency_key}-2" \
+  -d "$assistance_body" | json_field id)
+wait_for_field "$rider_token" "${ASSISTANCES}/api/assistances/${second_assistance_id}" offersExpireAt
+echo "   Ofertas abiertas de ${assigned}, que está trabajando:"
+api "${token[$assigned]}" GET "${DISPATCH}/api/dispatches/offers"
+echo
+echo "   Ofertas abiertas de ${other}:"
+api "${token[$other]}" GET "${DISPATCH}/api/dispatches/offers"
+echo
+api "$rider_token" POST "${ASSISTANCES}/api/assistances/${second_assistance_id}/cancel" >/dev/null
+echo "   (el repartidor cancela ese segundo pedido)"
+echo
+
 echo "El repartidor no puede marcar el trabajo como empezado; ${assigned} sí:"
 curl -sS -o /dev/null -w 'repartidor: HTTP %{http_code}\n' -X POST \
   "${ASSISTANCES}/api/assistances/${assistance_id}/start" -H "Authorization: Bearer ${rider_token}"

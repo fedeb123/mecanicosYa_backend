@@ -47,6 +47,12 @@ public class DispatchMatch {
 
     private Instant offersExpireAt;
 
+    /**
+     * Cuándo el mecánico terminó el trabajo. Mientras un despacho esté {@code MATCHED} sin esta fecha, el mecánico
+     * está ocupado: no recibe ofertas ni puede aceptar otro pedido.
+     */
+    private Instant completedAt;
+
     @Column(nullable = false)
     private Instant createdAt;
 
@@ -115,6 +121,21 @@ public class DispatchMatch {
 
     public void cancel() {
         this.status = DispatchStatus.CANCELLED;
+    }
+
+    /**
+     * El mecánico terminó el trabajo y queda libre para tomar otro pedido. Repetirlo no cambia la fecha.
+     */
+    public void complete(Instant now) {
+        requireStatus("be completed", DispatchStatus.MATCHED);
+        if (completedAt == null) {
+            this.completedAt = now;
+        }
+    }
+
+    /** El mecánico tiene este trabajo entre manos: lo aceptó y todavía no lo terminó. */
+    public boolean isActiveJob() {
+        return status == DispatchStatus.MATCHED && completedAt == null;
     }
 
     public boolean isOpen(Instant now) {
@@ -192,6 +213,10 @@ public class DispatchMatch {
 
     public Instant getOffersExpireAt() {
         return offersExpireAt;
+    }
+
+    public Instant getCompletedAt() {
+        return completedAt;
     }
 
     public Instant getCreatedAt() {
