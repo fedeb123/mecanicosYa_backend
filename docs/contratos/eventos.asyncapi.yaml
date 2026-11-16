@@ -1,0 +1,228 @@
+asyncapi: 3.0.0
+info:
+  title: MecanicosYa · eventos de Kafka
+  version: "2.0"
+  description: |
+    Eventos que se mandan los servicios por Kafka. Cada topic tiene 3 particiones; la clave del mensaje es el id
+    del pedido (o del mecánico en mechanic.events), así que los eventos de un mismo pedido se leen en orden.
+    Cada consumidor usa como consumer group el nombre de su servicio. Un mensaje que falla después de los
+    reintentos va a <topic>.<servicio>.dlt con la causa en los headers. El detalle está en docs/MENSAJERIA.md.
+
+defaultContentType: application/json
+
+servers:
+  compose:
+    host: kafka:9092
+    protocol: kafka
+    description: El broker del docker compose (KRaft, un nodo). Desde la máquina, localhost:29092.
+
+channels:
+  assistanceEvents:
+    address: assistance.events
+    description: Lo publica assistance-service. Lo consumen dispatch-service y mechanic-service.
+    messages:
+      assistanceRequested:
+        $ref: '#/components/messages/AssistanceRequested'
+      assistanceCancelled:
+        $ref: '#/components/messages/AssistanceCancelled'
+      assistanceCompleted:
+        $ref: '#/components/messages/AssistanceCompleted'
+      assistanceRated:
+        $ref: '#/components/messages/AssistanceRated'
+  dispatchEvents:
+    address: dispatch.events
+    description: Lo publica dispatch-service. Lo consume assistance-service.
+    messages:
+      dispatchOffered:
+        $ref: '#/components/messages/DispatchOffered'
+      dispatchMatched:
+        $ref: '#/components/messages/DispatchMatched'
+      dispatchUnmatched:
+        $ref: '#/components/messages/DispatchUnmatched'
+  mechanicEvents:
+    address: mechanic.events
+    description: Lo publica mechanic-service. Lo consume identity-service.
+    messages:
+      mechanicVerificationChanged:
+        $ref: '#/components/messages/MechanicVerificationChanged'
+
+operations:
+  publishAssistanceEvents:
+    action: send
+    summary: assistance-service avisa un pedido nuevo, una cancelación, un trabajo terminado o una calificación (desde su outbox).
+    channel:
+      $ref: '#/channels/assistanceEvents'
+  dispatchConsumesAssistanceEvents:
+    action: receive
+    summary: dispatch-service ofrece el pedido a los mecánicos cercanos, retira las ofertas si se canceló, o libera al mecánico cuando terminó el trabajo.
+    channel:
+      $ref: '#/channels/assistanceEvents'
+    messages:
+      - $ref: '#/channels/assistanceEvents/messages/assistanceRequested'
+      - $ref: '#/channels/assistanceEvents/messages/assistanceCancelled'
+      - $ref: '#/channels/assistanceEvents/messages/assistanceCompleted'
+  mechanicConsumesAssistanceEvents:
+    action: receive
+    summary: mechanic-service suma la calificación al promedio del mecánico (una sola vez por pedido).
+    channel:
+      $ref: '#/channels/assistanceEvents'
+    messages:
+      - $ref: '#/channels/assistanceEvents/messages/assistanceRated'
+  publishDispatchEvents:
+    action: send
+    summary: dispatch-service avisa que ofreció el pedido, que alguien lo tomó o que quedó sin mecánico.
+    channel:
+      $ref: '#/channels/dispatchEvents'
+  assistanceConsumesDispatchEvents:
+    action: receive
+    summary: assistance-service actualiza el estado del pedido y hasta cuándo se puede aceptar.
+    channel:
+      $ref: '#/channels/dispatchEvents'
+  publishMechanicEvents:
+    action: send
+    summary: mechanic-service avisa que un admin cambió el estado de validación de un mecánico.
+    channel:
+      $ref: '#/channels/mechanicEvents'
+  identityConsumesMechanicEvents:
+    action: receive
+    summary: identity-service guarda el estado para ponerlo en el próximo token del mecánico.
+    channel:
+      $ref: '#/channels/mechanicEvents'
+
+components:
+  messages:
+    AssistanceRequested:
+      name: ASSISTANCE_REQUESTED
+      headers:
+        $ref: '#/components/schemas/Headers'
+      payload:
+        type: object
+        required: [eventId, type, occurredAt, assistanceId, vehicleType, problemType, requiredSkill, latitude, longitude]
+        properties:
+          eventId: { $ref: '#/components/schemas/EventId' }
+          type: { const: ASSISTANCE_REQUESTED }
+          occurredAt: { $ref: '#/components/schemas/Instant' }
+          assistanceId: { $ref: '#/components/schemas/Uuid' }
+          vehicleType: { type: string, enum: [BICYCLE, E_BIKE, MOTORCYCLE] }
+          problemType: { type: string, examples: [CHAIN] }
+          requiredSkill: { type: string, examples: [CHAIN_REPAIR] }
+          latitude: { type: number }
+          longitude: { type: number }
+          mechanicKind:
+            type: [string, 'null']
+            enum: [MOBILE, WORKSHOP, null]
+            description: A domicilio (MOBILE) o en un taller (WORKSHOP); null si al repartidor le da igual. Dispatch solo ofrece a mecánicos de ese tipo.
+    AssistanceCancelled:
+      name: ASSISTANCE_CANCELLED
+      headers:
+        $ref: '#/components/schemas/Headers'
+      payload:
+        type: object
+        required: [eventId, type, occurredAt, assistanceId]
+        properties:
+          eventId: { $ref: '#/components/schemas/EventId' }
+          type: { const: ASSISTANCE_CANCELLED }
+          occurredAt: { $ref: '#/components/schemas/Instant' }
+          assistanceId: { $ref: '#/components/schemas/Uuid' }
+    AssistanceCompleted:
+      name: ASSISTANCE_COMPLETED
+      summary: El mecánico terminó el trabajo; vuelve a recibir ofertas.
+      headers:
+        $ref: '#/components/schemas/Headers'
+      payload:
+        type: object
+        required: [eventId, type, occurredAt, assistanceId]
+        properties:
+          eventId: { $ref: '#/components/schemas/EventId' }
+          type: { const: ASSISTANCE_COMPLETED }
+          occurredAt: { $ref: '#/components/schemas/Instant' }
+          assistanceId: { $ref: '#/components/schemas/Uuid' }
+    AssistanceRated:
+      name: ASSISTANCE_RATED
+      headers:
+        $ref: '#/components/schemas/Headers'
+      payload:
+        type: object
+        required: [eventId, type, occurredAt, assistanceId, mechanicId, score]
+        properties:
+          eventId: { $ref: '#/components/schemas/EventId' }
+          type: { const: ASSISTANCE_RATED }
+          occurredAt: { $ref: '#/components/schemas/Instant' }
+          assistanceId: { $ref: '#/components/schemas/Uuid' }
+          mechanicId: { $ref: '#/components/schemas/Uuid' }
+          score: { type: integer, minimum: 1, maximum: 5 }
+    DispatchOffered:
+      name: DISPATCH_OFFERED
+      headers:
+        $ref: '#/components/schemas/Headers'
+      payload:
+        type: object
+        required: [eventId, type, occurredAt, assistanceId, round, offers, expiresAt]
+        properties:
+          eventId: { $ref: '#/components/schemas/EventId' }
+          type: { const: DISPATCH_OFFERED }
+          occurredAt: { $ref: '#/components/schemas/Instant' }
+          assistanceId: { $ref: '#/components/schemas/Uuid' }
+          round: { type: integer, description: Ronda de ofertas, empieza en 1 }
+          offers: { type: integer, description: Cuántos mecánicos recibieron la oferta }
+          expiresAt: { $ref: '#/components/schemas/Instant' }
+    DispatchMatched:
+      name: DISPATCH_MATCHED
+      headers:
+        $ref: '#/components/schemas/Headers'
+      payload:
+        type: object
+        required: [eventId, type, occurredAt, assistanceId, round, mechanicId]
+        properties:
+          eventId: { $ref: '#/components/schemas/EventId' }
+          type: { const: DISPATCH_MATCHED }
+          occurredAt: { $ref: '#/components/schemas/Instant' }
+          assistanceId: { $ref: '#/components/schemas/Uuid' }
+          round: { type: integer }
+          mechanicId: { $ref: '#/components/schemas/Uuid' }
+          distanceKm: { type: [number, 'null'] }
+          etaMinutes: { type: [integer, 'null'] }
+    DispatchUnmatched:
+      name: DISPATCH_UNMATCHED
+      headers:
+        $ref: '#/components/schemas/Headers'
+      payload:
+        type: object
+        required: [eventId, type, occurredAt, assistanceId, round, reason]
+        properties:
+          eventId: { $ref: '#/components/schemas/EventId' }
+          type: { const: DISPATCH_UNMATCHED }
+          occurredAt: { $ref: '#/components/schemas/Instant' }
+          assistanceId: { $ref: '#/components/schemas/Uuid' }
+          round: { type: integer }
+          reason: { type: string, enum: [NO_CANDIDATE, EXPIRED] }
+    MechanicVerificationChanged:
+      name: MECHANIC_VERIFICATION_CHANGED
+      headers:
+        $ref: '#/components/schemas/Headers'
+      payload:
+        type: object
+        required: [eventId, type, occurredAt, mechanicId, verificationStatus]
+        properties:
+          eventId: { $ref: '#/components/schemas/EventId' }
+          type: { const: MECHANIC_VERIFICATION_CHANGED }
+          occurredAt: { $ref: '#/components/schemas/Instant' }
+          mechanicId: { $ref: '#/components/schemas/Uuid' }
+          verificationStatus: { type: string, enum: [PENDING_VERIFICATION, APPROVED] }
+  schemas:
+    Uuid:
+      type: string
+      format: uuid
+    EventId:
+      type: string
+      format: uuid
+      description: Identifica el evento. Los consumidores son idempotentes por el estado del pedido, así que un mensaje repetido no hace daño.
+    Instant:
+      type: string
+      format: date-time
+    Headers:
+      type: object
+      properties:
+        eventId: { type: string, format: uuid }
+        eventType: { type: string }
+        X-Correlation-Id: { type: string, description: El mismo id que viaja en los logs y en las llamadas REST }

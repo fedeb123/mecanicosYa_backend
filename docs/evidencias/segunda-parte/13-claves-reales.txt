@@ -1,0 +1,32 @@
+# Corrida en una Mac (Apple M) con ANTHROPIC_API_KEY y ORS_API_KEY reales, 12/11/2026
+# Volumen de Postgres nuevo (docker compose down --volumes) y DISPATCH_MATCHING_STRATEGY=fastest-eta.
+
+## Clasificación con IA (scripts/demo.sh, paso 0)
+
+$ curl -X POST localhost:8082/api/triage   (repartidor, "Se cortó la cadena en Palermo")
+{"category":"CHAIN","problemType":"CHAIN","requiredSkill":"CHAIN_REPAIR","urgency":"MEDIUM","confidence":0.97,"source":"AI"}
+
+El pedido creado sin tipo de problema queda con:
+"problemType":"CHAIN","requiredSkill":"CHAIN_REPAIR","urgency":"MEDIUM","triageSource":"AI","triageConfidence":0.97
+
+## Tiempo de llegada con OpenRouteService (scripts/demo.sh, pasos 3 y 4)
+
+Ofertas abiertas de Ada y de Grace, cada una con su token:
+[{"assistanceId":"b76f336f-5cc1-4805-88cf-7a160f5bf006","mechanicId":"99ec4cf0-f9e2-4153-a24e-a92ccf58465c","requiredSkill":"CHAIN_REPAIR","vehicleType":"BICYCLE","latitude":-34.5795,"longitude":-58.425,"distanceKm":0.7,"etaMinutes":2,"etaSource":"ROUTE","ranking":1,"expiresAt":"2026-11-12T06:10:29.840768Z"}]
+[{"assistanceId":"b76f336f-5cc1-4805-88cf-7a160f5bf006","mechanicId":"64c84a1c-8ca7-4a33-a5d8-7d539208d5b7","requiredSkill":"CHAIN_REPAIR","vehicleType":"BICYCLE","latitude":-34.5795,"longitude":-58.425,"distanceKm":1.1,"etaMinutes":4,"etaSource":"ROUTE","ranking":2,"expiresAt":"2026-11-12T06:10:29.840768Z"}]
+
+Con las mecánicas en las mismas posiciones y sin ORS_API_KEY (estimación en línea recta): 0.07 km / 1 min y 0.68 km / 3 min.
+Por calle, la distancia real es 0.7 km y 1.1 km.
+
+Ada y Grace aceptan al mismo tiempo:
+ada: HTTP 200 {... "status":"MATCHED","offers":[{... "etaSource":"ROUTE","status":"ACCEPTED"},{... "etaSource":"ROUTE","status":"LOST"}]}
+grace: HTTP 409 {"title":"Assistance already taken","code":"ALREADY_TAKEN", ...}
+
+El repartidor no puede marcar el trabajo como empezado:
+repartidor: HTTP 403
+
+## Respaldo cuando OpenRouteService rechaza la clave
+
+Con una clave sin acceso a la Matrix API, dispatch-service siguió con la estimación en línea recta y ofreció el pedido igual:
+WARN ResilientTravelTimeEstimator : Route service failed, estimating in a straight line: OpenRouteService did not answer: 403 Forbidden: "{"error": "Access to this API has been disallowed"}"
+INFO DispatchFacade : Assistance ... offered to 3 mechanic(s) until ... (round 1)

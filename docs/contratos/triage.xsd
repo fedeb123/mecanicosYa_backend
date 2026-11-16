@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Contrato del servicio SOAP de clasificación. El WSDL se arma a partir de este esquema y se publica en
+  /ws/triage.wsdl. Es la misma clasificación que POST /api/triage (REST), expuesta por SOAP.
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:tns="http://mecanicosya.com/ws/triage"
+           targetNamespace="http://mecanicosya.com/ws/triage"
+           elementFormDefault="qualified">
+
+    <xs:simpleType name="VehicleType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="BICYCLE"/>
+            <xs:enumeration value="E_BIKE"/>
+            <xs:enumeration value="MOTORCYCLE"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="Urgency">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="LOW"/>
+            <xs:enumeration value="MEDIUM"/>
+            <xs:enumeration value="HIGH"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="TriageSource">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="AI"/>
+            <xs:enumeration value="KEYWORDS"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:element name="ClassifyProblemRequest">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="description">
+                    <xs:simpleType>
+                        <xs:restriction base="xs:string">
+                            <xs:minLength value="1"/>
+                            <xs:maxLength value="1000"/>
+                        </xs:restriction>
+                    </xs:simpleType>
+                </xs:element>
+                <xs:element name="vehicleType" type="tns:VehicleType" minOccurs="0"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="ClassifyProblemResponse">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="category" type="xs:string"/>
+                <xs:element name="problemType" type="xs:string"/>
+                <xs:element name="requiredSkill" type="xs:string"/>
+                <xs:element name="urgency" type="tns:Urgency"/>
+                <xs:element name="confidence" type="xs:double"/>
+                <xs:element name="source" type="tns:TriageSource"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+</xs:schema>

@@ -1,0 +1,387 @@
+openapi: 3.1.0
+info:
+  title: MecanicosYa · dispatch-service
+  description: "Ofertas de cada pedido a los mecánicos cercanos, aceptación con un\
+    \ solo ganador, rechazo y vencimiento. Calcula el tiempo de llegada con OpenRouteService.\
+    \ Consume assistance.events y publica dispatch.events."
+  version: "2.0"
+servers:
+- url: http://localhost:8083
+  description: Generated server url
+security:
+- bearerAuth: []
+paths:
+  /api/dispatches:
+    post:
+      tags:
+      - Dispatch
+      summary: Offer an assistance to the best qualified mechanics (role SERVICE or
+        ADMIN)
+      operationId: dispatch
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DispatchRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/DispatchResponse"
+  /api/dispatches/{assistanceId}/decline:
+    post:
+      tags:
+      - Dispatch
+      summary: Pass on an offered assistance (the mechanic of the token; the body
+        is optional)
+      operationId: decline
+      parameters:
+      - name: assistanceId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OfferAnswerRequest"
+      responses:
+        "200":
+          description: OK
+  /api/dispatches/{assistanceId}/cancel:
+    post:
+      tags:
+      - Dispatch
+      summary: Withdraw the offers of a cancelled assistance (role SERVICE or ADMIN)
+      operationId: cancel
+      parameters:
+      - name: assistanceId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/DispatchResponse"
+  /api/dispatches/{assistanceId}/accept:
+    post:
+      tags:
+      - Dispatch
+      summary: Take an offered assistance; the first mechanic wins and the rest get
+        409
+      description: The mechanic is the one of the token; 403 while pending verification.
+        A mechanic who is still working on another assistance gets 409 MECHANIC_BUSY.
+        The body is optional.
+      operationId: accept
+      parameters:
+      - name: assistanceId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OfferAnswerRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/DispatchResponse"
+  /api/routes:
+    get:
+      tags:
+      - Routes
+      summary: "Route from the mechanic to the rider, with a line for the map and\
+        \ turn-by-turn steps (role RIDER, MECHANIC or ADMIN)"
+      description: "By street with OpenRouteService, with the same profile as the\
+        \ offers' arrival time (ORS_PROFILE). Without an API key, or if it does not\
+        \ answer, a straight line without steps (source ESTIMATE)."
+      operationId: route
+      parameters:
+      - name: fromLatitude
+        in: query
+        required: true
+        schema:
+          type: number
+          format: double
+          maximum: 90.0
+          minimum: -90.0
+      - name: fromLongitude
+        in: query
+        required: true
+        schema:
+          type: number
+          format: double
+          maximum: 180.0
+          minimum: -180.0
+      - name: toLatitude
+        in: query
+        required: true
+        schema:
+          type: number
+          format: double
+          maximum: 90.0
+          minimum: -90.0
+      - name: toLongitude
+        in: query
+        required: true
+        schema:
+          type: number
+          format: double
+          maximum: 180.0
+          minimum: -180.0
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/RouteResponse"
+  /api/dispatches/{assistanceId}:
+    get:
+      tags:
+      - Dispatch
+      summary: Get the dispatch state and the offers of the current round (role SERVICE
+        or ADMIN)
+      operationId: find
+      parameters:
+      - name: assistanceId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/DispatchResponse"
+  /api/dispatches/offers:
+    get:
+      tags:
+      - Dispatch
+      summary: List the open offers of the mechanic of the token; 403 while pending
+        verification
+      description: Empty while the mechanic is working on an accepted assistance.
+        An admin passes mechanicId.
+      operationId: openOffers
+      parameters:
+      - name: mechanicId
+        in: query
+        required: false
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OfferResponse"
+components:
+  schemas:
+    DispatchRequest:
+      type: object
+      properties:
+        assistanceId:
+          type: string
+          format: uuid
+        requiredSkill:
+          type: string
+          minLength: 1
+        latitude:
+          type: number
+          format: double
+          maximum: 90.0
+          minimum: -90.0
+        longitude:
+          type: number
+          format: double
+          maximum: 180.0
+          minimum: -180.0
+        vehicleType:
+          type: string
+        mechanicKind:
+          type: string
+      required:
+      - assistanceId
+      - requiredSkill
+    DispatchResponse:
+      type: object
+      properties:
+        assistanceId:
+          type: string
+          format: uuid
+        mechanicId:
+          type: string
+          format: uuid
+        distanceKm:
+          type: number
+          format: double
+        etaMinutes:
+          type: integer
+          format: int32
+        status:
+          type: string
+          enum:
+          - OFFERED
+          - MATCHED
+          - NO_CANDIDATE
+          - UNMATCHED
+          - CANCELLED
+        round:
+          type: integer
+          format: int32
+        offersExpireAt:
+          type: string
+          format: date-time
+        offers:
+          type: array
+          items:
+            $ref: "#/components/schemas/OfferSummary"
+        completedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+    OfferSummary:
+      type: object
+      properties:
+        mechanicId:
+          type: string
+          format: uuid
+        distanceKm:
+          type: number
+          format: double
+        etaMinutes:
+          type: integer
+          format: int32
+        etaSource:
+          type: string
+          enum:
+          - ROUTE
+          - ESTIMATE
+        ranking:
+          type: integer
+          format: int32
+        status:
+          type: string
+          enum:
+          - PENDING
+          - ACCEPTED
+          - DECLINED
+          - LOST
+          - EXPIRED
+          - WITHDRAWN
+    OfferAnswerRequest:
+      type: object
+      properties:
+        mechanicId:
+          type: string
+          format: uuid
+    RouteResponse:
+      type: object
+      properties:
+        source:
+          type: string
+          enum:
+          - ROUTE
+          - ESTIMATE
+        distanceKm:
+          type: number
+          format: double
+        durationMinutes:
+          type: integer
+          format: int32
+        points:
+          type: array
+          items:
+            type: array
+            items:
+              type: number
+              format: double
+        steps:
+          type: array
+          items:
+            $ref: "#/components/schemas/StepResponse"
+    StepResponse:
+      type: object
+      properties:
+        instruction:
+          type: string
+        street:
+          type: string
+        distanceMeters:
+          type: integer
+          format: int32
+        durationSeconds:
+          type: integer
+          format: int32
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+    OfferResponse:
+      type: object
+      properties:
+        assistanceId:
+          type: string
+          format: uuid
+        mechanicId:
+          type: string
+          format: uuid
+        requiredSkill:
+          type: string
+        vehicleType:
+          type: string
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+        distanceKm:
+          type: number
+          format: double
+        etaMinutes:
+          type: integer
+          format: int32
+        etaSource:
+          type: string
+          enum:
+          - ROUTE
+          - ESTIMATE
+        ranking:
+          type: integer
+          format: int32
+        expiresAt:
+          type: string
+          format: date-time
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

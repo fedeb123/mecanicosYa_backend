@@ -1,0 +1,16 @@
+$ mvn verify
+Tests run: 8, Failures: 0, Errors: 0, Skipped: 0
+Tests run: 10, Failures: 0, Errors: 0, Skipped: 0
+Tests run: 24, Failures: 0, Errors: 0, Skipped: 0
+Tests run: 78, Failures: 0, Errors: 0, Skipped: 1
+Tests run: 55, Failures: 0, Errors: 0, Skipped: 0
+Reactor Summary for MecanicosYa - Desarrollo de Aplicaciones II 0.1.0-SNAPSHOT:
+MecanicosYa - Desarrollo de Aplicaciones II ............. SUCCESS [  0.002 s]
+shared-observability ............................... SUCCESS [  0.665 s]
+shared-messaging ................................... SUCCESS [  0.143 s]
+shared-security .................................... SUCCESS [  2.189 s]
+identity-service ................................... SUCCESS [ 12.066 s]
+mechanic-service ................................... SUCCESS [ 12.371 s]
+assistance-service ................................. SUCCESS [ 30.964 s]
+dispatch-service ................................... SUCCESS [ 30.281 s]
+BUILD SUCCESS

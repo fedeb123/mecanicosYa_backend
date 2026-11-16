@@ -1,0 +1,39 @@
+A. Usuarios: tres mecánicos y un repartidor se registran; el admin inicia sesión.
+   Ada todavía no fue aprobada: ponerse disponible le da
+   HTTP 403
+   El admin aprueba a los tres; cada uno renueva su token, que ahora dice APPROVED.
+
+0. Clasificación del texto (IA si hay ANTHROPIC_API_KEY, si no palabras clave):
+{"category":"CHAIN","problemType":"CHAIN","requiredSkill":"CHAIN_REPAIR","urgency":"MEDIUM","confidence":0.7,"source":"KEYWORDS"}
+
+1. Pedido de asistencia sin tipo de problema (Idempotency-Key demo-1793669133):
+{"id":"1066803b-cb3f-4255-ae49-ff99c5ae6e7e","clientId":"f165978c-d72b-485c-94e2-822a6113989e","vehicleId":"5bc31960-39dd-4127-a899-9394c218041b","vehicleType":"BICYCLE","description":"Se cortó la cadena en Palermo","problemType":"CHAIN","requiredSkill":"CHAIN_REPAIR","latitude":-34.5795,"longitude":-58.425,"status":"REQUESTED","assignedMechanicId":null,"rating":null,"ratingComment":null,"offersExpireAt":null,"idempotencyKey":"demo-1793669133","clientCreatedAt":"2026-11-03T01:25:38Z","createdAt":"2026-11-03T01:25:38.445510Z","urgency":"MEDIUM","triageSource":"KEYWORDS","triageConfidence":0.7}
+
+2. Reintento con la misma clave (no crea otro pedido):
+HTTP 200
+
+3. dispatch-service toma el pedido de Kafka (assistance.events) y lo ofrece; assistance-service recibe la
+   oferta por dispatch.events y guarda hasta cuándo se puede aceptar:
+{"id":"1066803b-cb3f-4255-ae49-ff99c5ae6e7e","clientId":"f165978c-d72b-485c-94e2-822a6113989e","vehicleId":"5bc31960-39dd-4127-a899-9394c218041b","vehicleType":"BICYCLE","description":"Se cortó la cadena en Palermo","problemType":"CHAIN","requiredSkill":"CHAIN_REPAIR","latitude":-34.5795,"longitude":-58.425,"status":"REQUESTED","assignedMechanicId":null,"rating":null,"ratingComment":null,"offersExpireAt":"2026-11-03T01:27:38.804543Z","idempotencyKey":"demo-1793669133","clientCreatedAt":"2026-11-03T01:25:38Z","createdAt":"2026-11-03T01:25:38.445510Z","urgency":"MEDIUM","triageSource":"KEYWORDS","triageConfidence":0.7}
+
+   Ofertas abiertas de Ada y de Grace, cada una con su token (Linus arregla motos, no recibe el pedido):
+[{"assistanceId":"1066803b-cb3f-4255-ae49-ff99c5ae6e7e","mechanicId":"2aac49ec-f86c-401c-a225-9ac44c36730c","requiredSkill":"CHAIN_REPAIR","vehicleType":"BICYCLE","latitude":-34.5795,"longitude":-58.425,"distanceKm":0.07,"etaMinutes":1,"etaSource":"ESTIMATE","ranking":1,"expiresAt":"2026-11-03T01:27:38.804543Z"}]
+[{"assistanceId":"1066803b-cb3f-4255-ae49-ff99c5ae6e7e","mechanicId":"a173693c-3462-4359-97e2-f1b3e250fd29","requiredSkill":"CHAIN_REPAIR","vehicleType":"BICYCLE","latitude":-34.5795,"longitude":-58.425,"distanceKm":0.68,"etaMinutes":3,"etaSource":"ESTIMATE","ranking":2,"expiresAt":"2026-11-03T01:27:38.804543Z"}]
+
+4. Ada y Grace aceptan al mismo tiempo (el mecánico sale del token):
+ada: HTTP 200 {"assistanceId":"1066803b-cb3f-4255-ae49-ff99c5ae6e7e","mechanicId":"2aac49ec-f86c-401c-a225-9ac44c36730c","distanceKm":0.07,"etaMinutes":1,"status":"MATCHED","round":1,"offersExpireAt":"2026-11-03T01:27:38.804543Z","offers":[{"mechanicId":"2aac49ec-f86c-401c-a225-9ac44c36730c","distanceKm":0.07,"etaMinutes":1,"etaSource":"ESTIMATE","ranking":1,"status":"ACCEPTED"},{"mechanicId":"a173693c-3462-4359-97e2-f1b3e250fd29","distanceKm":0.68,"etaMinutes":3,"etaSource":"ESTIMATE","ranking":2,"status":"LOST"}],"createdAt":"2026-11-03T01:25:38.804543Z"}
+grace: HTTP 409 {"detail":"Assistance 1066803b-cb3f-4255-ae49-ff99c5ae6e7e was already taken by another mechanic","instance":"/api/dispatches/1066803b-cb3f-4255-ae49-ff99c5ae6e7e/accept","status":409,"title":"Assistance already taken","code":"ALREADY_TAKEN"}
+
+Asistencia:
+{"id":"1066803b-cb3f-4255-ae49-ff99c5ae6e7e","clientId":"f165978c-d72b-485c-94e2-822a6113989e","vehicleId":"5bc31960-39dd-4127-a899-9394c218041b","vehicleType":"BICYCLE","description":"Se cortó la cadena en Palermo","problemType":"CHAIN","requiredSkill":"CHAIN_REPAIR","latitude":-34.5795,"longitude":-58.425,"status":"MATCHED","assignedMechanicId":"2aac49ec-f86c-401c-a225-9ac44c36730c","rating":null,"ratingComment":null,"offersExpireAt":null,"idempotencyKey":"demo-1793669133","clientCreatedAt":"2026-11-03T01:25:38Z","createdAt":"2026-11-03T01:25:38.445510Z","urgency":"MEDIUM","triageSource":"KEYWORDS","triageConfidence":0.7}
+Despacho (lo ve el admin):
+{"assistanceId":"1066803b-cb3f-4255-ae49-ff99c5ae6e7e","mechanicId":"2aac49ec-f86c-401c-a225-9ac44c36730c","distanceKm":0.07,"etaMinutes":1,"status":"MATCHED","round":1,"offersExpireAt":"2026-11-03T01:27:38.804543Z","offers":[{"mechanicId":"2aac49ec-f86c-401c-a225-9ac44c36730c","distanceKm":0.07,"etaMinutes":1,"etaSource":"ESTIMATE","ranking":1,"status":"ACCEPTED"},{"mechanicId":"a173693c-3462-4359-97e2-f1b3e250fd29","distanceKm":0.68,"etaMinutes":3,"etaSource":"ESTIMATE","ranking":2,"status":"LOST"}],"createdAt":"2026-11-03T01:25:38.804543Z"}
+El repartidor no puede marcar el trabajo como empezado; ada sí:
+repartidor: HTTP 403
+
+Calificación del trabajo:
+{"id":"1066803b-cb3f-4255-ae49-ff99c5ae6e7e","clientId":"f165978c-d72b-485c-94e2-822a6113989e","vehicleId":"5bc31960-39dd-4127-a899-9394c218041b","vehicleType":"BICYCLE","description":"Se cortó la cadena en Palermo","problemType":"CHAIN","requiredSkill":"CHAIN_REPAIR","latitude":-34.5795,"longitude":-58.425,"status":"COMPLETED","assignedMechanicId":"2aac49ec-f86c-401c-a225-9ac44c36730c","rating":4,"ratingComment":"Llegó rápido y dejó la bici andando","offersExpireAt":null,"idempotencyKey":"demo-1793669133","clientCreatedAt":"2026-11-03T01:25:38Z","createdAt":"2026-11-03T01:25:38.445510Z","urgency":"MEDIUM","triageSource":"KEYWORDS","triageConfidence":0.7}
+Mecánico con su calificación actualizada (llegó por Kafka):
+{"id":"2aac49ec-f86c-401c-a225-9ac44c36730c","name":"Ada Mecánica","email":"ada-1793669133@example.com","latitude":-34.58,"longitude":-58.4255,"available":true,"rating":4.0,"ratingCount":1,"skills":["TIRE_REPAIR","CHAIN_REPAIR"],"vehicleTypes":["E_BIKE","BICYCLE"],"verificationStatus":"APPROVED"}
+Historial de estados:
+[{"fromStatus":null,"toStatus":"REQUESTED","changedAt":"2026-11-03T01:25:38.454743Z"},{"fromStatus":"REQUESTED","toStatus":"MATCHED","changedAt":"2026-11-03T01:25:39.869313Z"},{"fromStatus":"MATCHED","toStatus":"IN_PROGRESS","changedAt":"2026-11-03T01:25:40.003015Z"},{"fromStatus":"IN_PROGRESS","toStatus":"COMPLETED","changedAt":"2026-11-03T01:25:40.027443Z"}]

@@ -1,0 +1,87 @@
+<?xml version="1.0" ?>
+<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:sch="http://mecanicosya.com/ws/triage" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tns="http://mecanicosya.com/ws/triage" targetNamespace="http://mecanicosya.com/ws/triage">
+  <wsdl:types>
+    <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" targetNamespace="http://mecanicosya.com/ws/triage">
+      <xs:simpleType name="VehicleType">
+        <xs:restriction base="xs:string">
+          <xs:enumeration value="BICYCLE"/>
+          <xs:enumeration value="E_BIKE"/>
+          <xs:enumeration value="MOTORCYCLE"/>
+        </xs:restriction>
+      </xs:simpleType>
+      <xs:simpleType name="Urgency">
+        <xs:restriction base="xs:string">
+          <xs:enumeration value="LOW"/>
+          <xs:enumeration value="MEDIUM"/>
+          <xs:enumeration value="HIGH"/>
+        </xs:restriction>
+      </xs:simpleType>
+      <xs:simpleType name="TriageSource">
+        <xs:restriction base="xs:string">
+          <xs:enumeration value="AI"/>
+          <xs:enumeration value="KEYWORDS"/>
+        </xs:restriction>
+      </xs:simpleType>
+      <xs:element name="ClassifyProblemRequest">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="description">
+              <xs:simpleType>
+                <xs:restriction base="xs:string">
+                  <xs:minLength value="1"/>
+                  <xs:maxLength value="1000"/>
+                </xs:restriction>
+              </xs:simpleType>
+            </xs:element>
+            <xs:element minOccurs="0" name="vehicleType" type="tns:VehicleType"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="ClassifyProblemResponse">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="category" type="xs:string"/>
+            <xs:element name="problemType" type="xs:string"/>
+            <xs:element name="requiredSkill" type="xs:string"/>
+            <xs:element name="urgency" type="tns:Urgency"/>
+            <xs:element name="confidence" type="xs:double"/>
+            <xs:element name="source" type="tns:TriageSource"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+    </xs:schema>
+  </wsdl:types>
+  <wsdl:message name="ClassifyProblemResponse">
+    <wsdl:part element="tns:ClassifyProblemResponse" name="ClassifyProblemResponse">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="ClassifyProblemRequest">
+    <wsdl:part element="tns:ClassifyProblemRequest" name="ClassifyProblemRequest">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:portType name="TriagePort">
+    <wsdl:operation name="ClassifyProblem">
+      <wsdl:input message="tns:ClassifyProblemRequest" name="ClassifyProblemRequest">
+    </wsdl:input>
+      <wsdl:output message="tns:ClassifyProblemResponse" name="ClassifyProblemResponse">
+    </wsdl:output>
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:binding name="TriagePortSoap11" type="tns:TriagePort">
+    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <wsdl:operation name="ClassifyProblem">
+      <soap:operation soapAction=""/>
+      <wsdl:input name="ClassifyProblemRequest">
+        <soap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output name="ClassifyProblemResponse">
+        <soap:body use="literal"/>
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="TriageService">
+    <wsdl:port binding="tns:TriagePortSoap11" name="TriagePortSoap11">
+      <soap:address location="http://localhost:8082/ws"/>
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>
