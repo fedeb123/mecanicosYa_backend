@@ -5,14 +5,13 @@ import org.springframework.stereotype.Component;
 
 import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
 
 @Component
 @ConditionalOnProperty(name = "dispatch.matching.strategy", havingValue = "nearest", matchIfMissing = true)
 public class NearestQualifiedMechanicStrategy implements MatchingStrategy {
 
     @Override
-    public Optional<MechanicSelection> select(
+    public List<MechanicSelection> rank(
             double assistanceLatitude,
             double assistanceLongitude,
             List<MechanicCandidate> candidates
@@ -29,6 +28,7 @@ public class NearestQualifiedMechanicStrategy implements MatchingStrategy {
                     double score = distance - (candidate.rating() * 0.1);
                     return new MechanicSelection(candidate, GeoDistance.round(distance), score);
                 })
-                .min(Comparator.comparingDouble(MechanicSelection::score));
+                .sorted(Comparator.comparingDouble(MechanicSelection::score))
+                .toList();
     }
 }

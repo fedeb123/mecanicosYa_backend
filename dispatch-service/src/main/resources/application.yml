@@ -20,6 +20,9 @@ clients:
   mechanic-service:
     base-url: ${MECHANIC_SERVICE_URL:http://localhost:8081}
     timeout: ${MECHANIC_SERVICE_TIMEOUT:3s}
+  assistance-service:
+    base-url: ${ASSISTANCE_SERVICE_URL:http://localhost:8082}
+    timeout: ${ASSISTANCE_SERVICE_TIMEOUT:3s}
 
 dispatch:
   matching:
@@ -27,6 +30,12 @@ dispatch:
     # best-rated: el mejor calificado dentro de max-distance-km
     strategy: ${DISPATCH_MATCHING_STRATEGY:nearest}
     max-distance-km: ${DISPATCH_MAX_DISTANCE_KM:5}
+  offers:
+    # A cuántos mecánicos se ofrece cada pedido, en el orden de la estrategia
+    max-offers: ${DISPATCH_MAX_OFFERS:3}
+    # Duración de cada ronda; si nadie acepta, el pedido queda UNMATCHED
+    ttl: ${DISPATCH_OFFER_TTL:PT2M}
+    expiry-check: ${DISPATCH_OFFER_EXPIRY_CHECK:PT15S}
 
 management:
   endpoints:
