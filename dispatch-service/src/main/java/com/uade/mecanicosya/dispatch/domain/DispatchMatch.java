@@ -25,6 +25,9 @@ public class DispatchMatch {
 
     private Double distanceKm;
 
+    /** Minutos que tarda en llegar el mecánico que tomó el pedido. */
+    private Integer etaMinutes;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     private DispatchStatus status;
@@ -157,6 +160,10 @@ public class DispatchMatch {
 
     public Double getDistanceKm() {
         return distanceKm;
+    }
+
+    public Integer getEtaMinutes() {
+        return etaMinutes;
     }
 
     public DispatchStatus getStatus() {

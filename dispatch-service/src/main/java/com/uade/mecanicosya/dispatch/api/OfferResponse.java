@@ -1,5 +1,6 @@
 package com.uade.mecanicosya.dispatch.api;
 
+import com.uade.mecanicosya.dispatch.domain.EtaSource;
 import com.uade.mecanicosya.dispatch.domain.OpenOffer;
 
 import java.time.Instant;
@@ -13,6 +14,8 @@ public record OfferResponse(
         Double latitude,
         Double longitude,
         double distanceKm,
+        Integer etaMinutes,
+        EtaSource etaSource,
         int ranking,
         Instant expiresAt
 ) {
@@ -26,6 +29,8 @@ public record OfferResponse(
                 offer.latitude(),
                 offer.longitude(),
                 offer.distanceKm(),
+                offer.etaMinutes(),
+                offer.etaSource(),
                 offer.ranking(),
                 offer.expiresAt()
         );

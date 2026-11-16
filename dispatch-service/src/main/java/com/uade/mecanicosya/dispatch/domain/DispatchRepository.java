@@ -17,8 +17,9 @@ public interface DispatchRepository extends JpaRepository<DispatchMatch, UUID> {
      *
      * @return 1 si este mecánico ganó, 0 si el pedido ya no estaba disponible
      */
-    default int claim(UUID assistanceId, int round, UUID mechanicId, double distanceKm, Instant now) {
-        return claimIfOffered(assistanceId, round, mechanicId, distanceKm, now, DispatchStatus.OFFERED, DispatchStatus.MATCHED);
+    default int claim(UUID assistanceId, int round, UUID mechanicId, double distanceKm, Integer etaMinutes, Instant now) {
+        return claimIfOffered(assistanceId, round, mechanicId, distanceKm, etaMinutes, now, DispatchStatus.OFFERED,
+                DispatchStatus.MATCHED);
     }
 
     @Modifying(flushAutomatically = true, clearAutomatically = true)
@@ -27,6 +28,7 @@ public interface DispatchRepository extends JpaRepository<DispatchMatch, UUID> {
                set d.status = :matched,
                    d.mechanicId = :mechanicId,
                    d.distanceKm = :distanceKm,
+                   d.etaMinutes = :etaMinutes,
                    d.version = d.version + 1
              where d.assistanceId = :assistanceId
                and d.round = :round
@@ -38,6 +40,7 @@ public interface DispatchRepository extends JpaRepository<DispatchMatch, UUID> {
             @Param("round") int round,
             @Param("mechanicId") UUID mechanicId,
             @Param("distanceKm") double distanceKm,
+            @Param("etaMinutes") Integer etaMinutes,
             @Param("now") Instant now,
             @Param("offered") DispatchStatus offered,
             @Param("matched") DispatchStatus matched

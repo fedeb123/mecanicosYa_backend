@@ -14,6 +14,8 @@ public record OpenOffer(
         Double latitude,
         Double longitude,
         double distanceKm,
+        Integer etaMinutes,
+        EtaSource etaSource,
         int ranking,
         Instant expiresAt
 ) {

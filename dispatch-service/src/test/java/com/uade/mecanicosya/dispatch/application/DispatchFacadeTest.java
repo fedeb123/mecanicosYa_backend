@@ -6,7 +6,9 @@ import com.uade.mecanicosya.dispatch.domain.DispatchOfferRepository;
 import com.uade.mecanicosya.dispatch.domain.DispatchRepository;
 import com.uade.mecanicosya.dispatch.domain.DispatchStatus;
 import com.uade.mecanicosya.dispatch.domain.MechanicCandidate;
+import com.uade.mecanicosya.dispatch.domain.EtaSource;
 import com.uade.mecanicosya.dispatch.domain.NearestQualifiedMechanicStrategy;
+import com.uade.mecanicosya.dispatch.domain.StraightLineTravelTimeEstimator;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
@@ -48,6 +50,7 @@ class DispatchFacadeTest {
             assignmentPort,
             eventPublisher,
             new OfferPolicy(2, Duration.ofMinutes(2)),
+            new StraightLineTravelTimeEstimator(20, 1.3),
             Clock.fixed(NOW, ZoneOffset.UTC)
     );
     private final UUID assistanceId = UUID.randomUUID();
@@ -74,6 +77,11 @@ class DispatchFacadeTest {
                         org.assertj.core.groups.Tuple.tuple(near.id(), 1),
                         org.assertj.core.groups.Tuple.tuple(far.id(), 2)
                 );
+        // Con nearest, el tiempo de llegada se completa después de ordenar (acá, en línea recta).
+        assertThat(offers.getAllValues()).allSatisfy(offer -> {
+            assertThat(offer.getEtaMinutes()).isPositive();
+            assertThat(offer.getEtaSource()).isEqualTo(EtaSource.ESTIMATE);
+        });
         verify(eventPublisher).offered(dispatch, 2);
     }
 
@@ -120,7 +128,7 @@ class DispatchFacadeTest {
         when(repository.findById(assistanceId)).thenReturn(Optional.of(open), Optional.of(takenByOther));
         when(offerRepository.findByAssistanceIdAndRoundAndMechanicId(assistanceId, 1, loser))
                 .thenReturn(Optional.of(new DispatchOffer(assistanceId, 1, loser, 1.2, 2, NOW)));
-        when(repository.claim(eq(assistanceId), anyInt(), eq(loser), anyDouble(), eq(NOW))).thenReturn(0);
+        when(repository.claim(eq(assistanceId), anyInt(), eq(loser), anyDouble(), any(), eq(NOW))).thenReturn(0);
 
         assertThatThrownBy(() -> facade.accept(assistanceId, loser)).isInstanceOf(OfferAlreadyTakenException.class);
         verify(assignmentPort, never()).assign(any(), any());
@@ -132,7 +140,7 @@ class DispatchFacadeTest {
 
         assertThatThrownBy(() -> facade.accept(assistanceId, UUID.randomUUID()))
                 .isInstanceOf(OfferNotFoundException.class);
-        verify(repository, never()).claim(any(), anyInt(), any(), anyDouble(), any());
+        verify(repository, never()).claim(any(), anyInt(), any(), anyDouble(), any(), any());
     }
 
     @Test

@@ -1,0 +1,4 @@
+# Los tests nunca llaman a OpenRouteService, aunque ORS_API_KEY esté definida en la terminal.
+clients:
+  openrouteservice:
+    api-key: ""
