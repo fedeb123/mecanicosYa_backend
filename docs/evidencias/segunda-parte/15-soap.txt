@@ -1,0 +1,78 @@
+# Servicio SOAP de clasificación (assistance-service)
+# 2026-11-16T06:06Z. Los cuatro servicios corriendo con Postgres y Kafka del compose; token de un repartidor recién registrado.
+# Sin ANTHROPIC_API_KEY clasifica el respaldo por palabras clave (source KEYWORDS); con la clave responde source AI.
+
+## 0. El WSDL se lee sin token
+$ curl -s http://localhost:8082/ws/triage.wsdl   (extracto; completo en docs/contratos/triage.wsdl)
+      <soap:address location="http://localhost:8082/ws"/>
+      <wsdl:input name="ClassifyProblemRequest">
+      <wsdl:output name="ClassifyProblemResponse">
+    <wsdl:operation name="ClassifyProblem">
+  <wsdl:service name="TriageService">
+
+## 1. Sobre válido, con token
+$ curl -s -X POST http://localhost:8082/ws -H "Content-Type: text/xml; charset=utf-8" -H "Authorization: Bearer $TOKEN" --data-binary @pedido.xml
+# pedido.xml:
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:tri="http://mecanicosya.com/ws/triage">
+  <soapenv:Header/>
+  <soapenv:Body>
+    <tri:ClassifyProblemRequest>
+      <tri:description>Se me cortó la cadena y estoy parado en Palermo</tri:description>
+      <tri:vehicleType>BICYCLE</tri:vehicleType>
+    </tri:ClassifyProblemRequest>
+  </soapenv:Body>
+</soapenv:Envelope>
+HTTP 200
+<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/">
+  <SOAP-ENV:Header/>
+  <SOAP-ENV:Body>
+    <ns2:ClassifyProblemResponse xmlns:ns2="http://mecanicosya.com/ws/triage">
+      <ns2:category>CHAIN</ns2:category>
+      <ns2:problemType>CHAIN</ns2:problemType>
+      <ns2:requiredSkill>CHAIN_REPAIR</ns2:requiredSkill>
+      <ns2:urgency>MEDIUM</ns2:urgency>
+      <ns2:confidence>0.7</ns2:confidence>
+      <ns2:source>KEYWORDS</ns2:source>
+    </ns2:ClassifyProblemResponse>
+  </SOAP-ENV:Body>
+</SOAP-ENV:Envelope>
+
+## 2. Moto que no arranca (descripción "La moto no arranca, la batería está muerta y estoy en plena avenida")
+HTTP 200
+<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/">
+  <SOAP-ENV:Header/>
+  <SOAP-ENV:Body>
+    <ns2:ClassifyProblemResponse xmlns:ns2="http://mecanicosya.com/ws/triage">
+      <ns2:category>ELECTRICAL</ns2:category>
+      <ns2:problemType>ELECTRICAL</ns2:problemType>
+      <ns2:requiredSkill>ELECTRICAL_REPAIR</ns2:requiredSkill>
+      <ns2:urgency>MEDIUM</ns2:urgency>
+      <ns2:confidence>0.7</ns2:confidence>
+      <ns2:source>KEYWORDS</ns2:source>
+    </ns2:ClassifyProblemResponse>
+  </SOAP-ENV:Body>
+</SOAP-ENV:Envelope>
+
+## 3. Sobre que no cumple el esquema (vehicleType TRUCK): SOAP Fault de cliente, no llega al endpoint
+HTTP 500
+<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/">
+  <SOAP-ENV:Header/>
+  <SOAP-ENV:Body>
+    <SOAP-ENV:Fault>
+      <faultcode>SOAP-ENV:Client</faultcode>
+      <faultstring xml:lang="en">Validation error</faultstring>
+      <detail>
+        <spring-ws:ValidationError xmlns:spring-ws="http://springframework.org/spring-ws">cvc-enumeration-valid: Value 'TRUCK' is not facet-valid with respect to enumeration '[BICYCLE, E_BIKE, MOTORCYCLE]'. It must be a value from the enumeration.</spring-ws:ValidationError>
+        <spring-ws:ValidationError xmlns:spring-ws="http://springframework.org/spring-ws">cvc-type.3.1.3: The value 'TRUCK' of element 'tri:vehicleType' is not valid.</spring-ws:ValidationError>
+      </detail>
+    </SOAP-ENV:Fault>
+  </SOAP-ENV:Body>
+</SOAP-ENV:Envelope>
+
+## 4. Sin token
+HTTP 401
+{"type":"about:blank","title":"Unauthorized","status":401,"detail":"Missing, expired or invalid access token"}
+
+## 5. La misma clasificación por REST, para comparar
+$ curl -s -X POST http://localhost:8082/api/triage -H 'Authorization: Bearer $TOKEN' -H 'Content-Type: application/json' -d '{"description":"Se me cortó la cadena y estoy parado en Palermo","vehicleType":"BICYCLE"}'
+{"category":"CHAIN","problemType":"CHAIN","requiredSkill":"CHAIN_REPAIR","urgency":"MEDIUM","confidence":0.7,"source":"KEYWORDS"}

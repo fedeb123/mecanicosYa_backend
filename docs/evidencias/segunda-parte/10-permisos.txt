@@ -1,0 +1,42 @@
+# Respuestas sin token, con otro rol y de un mecánico pendiente
+
+$ curl localhost:8083/api/dispatches/offers   (sin token)
+{"type":"about:blank","title":"Unauthorized","status":401,"detail":"Missing, expired or invalid access token"}
+HTTP 401
+
+$ curl -H "Authorization: Bearer <mecánico pendiente>" localhost:8083/api/dispatches/offers
+{"detail":"Mechanic pending verification: an admin must approve them first","instance":"/api/dispatches/offers","status":403,"title":"Forbidden"}
+HTTP 403
+
+$ curl -X POST -H "Authorization: Bearer <mecánico pendiente>" localhost:8082/api/assistances   (rol equivocado)
+{"type":"about:blank","title":"Forbidden","status":403,"detail":"Your role cannot perform this operation"}
+HTTP 403
+
+$ curl -X POST localhost:8084/api/auth/login -d {"email":"admin@mecanicosya.local","password":"mala"}
+{"detail":"Invalid email or password","instance":"/api/auth/login","status":401,"title":"Unauthorized"}
+HTTP 401
+
+## Payload del access token del mecánico pendiente (decodificado)
+
+{
+  "sub": "6737f724-1952-43a8-9653-5dbbf1f82fc9",
+  "role": "MECHANIC",
+  "iss": "mecanicosya-identity",
+  "exp": 1793668994,
+  "verification_status": "PENDING_VERIFICATION",
+  "iat": 1793668094,
+  "email": "pend-1793668094@example.com"
+}
+
+## Clave pública (JWKS)
+
+{
+    "keys": [
+        {
+            "kty": "RSA",
+            "e": "AQAB",
+            "kid": "a202b042-06de-46ec-9e63-1ff2c078f65c",
+            "n": "1MJkkWk3UEfMIf6o_WiFc4uqRhq7B-odvUuCPPSzPxPGRoF7YjDFamMogMCQ7-qptndglNUUQeHvk3qsKzUrXF57X8Y-NQLisYRdXrm7O8-9E8nLZAWKG18qzHzMRL26x9z-EdH3emwftleO2csvgrQ1kazBBS83RqGRA_s9BMyOaSjChBQZK_CpR-tqL_BHyxFMAXEVuweWmqIsFiFqKV9Y1rIndTGcKe9ZSH0wtQUJrYgy5x96O0_4gDHI1rWQK5pQP3oIedjL1YVxg1p0UWYwewUgsXMQhvIqaoEtWeWeJm9swy_GE9vOwVEdzaDKuNeRB0LyBe6LW9M16lmL-w"
+        }
+    ]
+}

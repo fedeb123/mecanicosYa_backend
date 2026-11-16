@@ -1,0 +1,11 @@
+$ docker compose ps -a
+SERVICE              IMAGE                    STATUS                     PORTS
+assistance-service   mh-assistance-service    Up 2 minutes (healthy)     0.0.0.0:8082->8082/tcp
+dispatch-service     mh-dispatch-service      Up 2 minutes (healthy)     0.0.0.0:8083->8083/tcp
+frontend             nginx:1.27-alpine        Up 2 minutes               0.0.0.0:8080->80/tcp
+identity-service     mh-identity-service      Up 2 minutes (healthy)     0.0.0.0:8084->8084/tcp
+kafka                apache/kafka:4.1.0       Up 3 minutes (healthy)     9092/tcp, 0.0.0.0:29092->29092/tcp
+kafka-ui             kafbat/kafka-ui:v1.3.0   Up 2 minutes               0.0.0.0:8090->8080/tcp
+mechanic-service     mh-mechanic-service      Up 2 minutes (healthy)     0.0.0.0:8081->8081/tcp
+postgres             postgis/postgis:16-3.4   Up 3 minutes (healthy)     0.0.0.0:5432->5432/tcp
+postgres-setup       postgis/postgis:16-3.4   Exited (0) 3 minutes ago   

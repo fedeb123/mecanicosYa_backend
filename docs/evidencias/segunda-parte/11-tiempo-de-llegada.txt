@@ -1,0 +1,31 @@
+0. Clasificación del texto (IA si hay ANTHROPIC_API_KEY, si no palabras clave):
+{"category":"CHAIN","problemType":"CHAIN","requiredSkill":"CHAIN_REPAIR","urgency":"MEDIUM","confidence":0.7,"source":"KEYWORDS"}
+
+1. Pedido de asistencia sin tipo de problema (Idempotency-Key demo-1793666222):
+{"id":"395b4681-a330-42f8-a9a9-e7c4cb7f305d","clientId":"e659ce92-0b5b-47f7-ac70-7dd60892d34f","vehicleId":"a2d41975-d987-41ff-bbdd-6dc2bf760946","vehicleType":"BICYCLE","description":"Se cortó la cadena en Palermo","problemType":"CHAIN","requiredSkill":"CHAIN_REPAIR","latitude":-34.5795,"longitude":-58.425,"status":"REQUESTED","assignedMechanicId":null,"rating":null,"ratingComment":null,"offersExpireAt":null,"idempotencyKey":"demo-1793666222","clientCreatedAt":"2026-11-03T00:37:02Z","createdAt":"2026-11-03T00:37:02.575164Z","urgency":"MEDIUM","triageSource":"KEYWORDS","triageConfidence":0.7}
+
+2. Reintento con la misma clave (no crea otro pedido):
+HTTP 200
+
+3. dispatch-service toma el pedido de Kafka (assistance.events) y lo ofrece; assistance-service recibe la
+   oferta por dispatch.events y guarda hasta cuándo se puede aceptar:
+{"id":"395b4681-a330-42f8-a9a9-e7c4cb7f305d","clientId":"e659ce92-0b5b-47f7-ac70-7dd60892d34f","vehicleId":"a2d41975-d987-41ff-bbdd-6dc2bf760946","vehicleType":"BICYCLE","description":"Se cortó la cadena en Palermo","problemType":"CHAIN","requiredSkill":"CHAIN_REPAIR","latitude":-34.5795,"longitude":-58.425,"status":"REQUESTED","assignedMechanicId":null,"rating":null,"ratingComment":null,"offersExpireAt":"2026-11-03T00:39:02.673517Z","idempotencyKey":"demo-1793666222","clientCreatedAt":"2026-11-03T00:37:02Z","createdAt":"2026-11-03T00:37:02.575164Z","urgency":"MEDIUM","triageSource":"KEYWORDS","triageConfidence":0.7}
+
+   Ofertas abiertas de Ada y de Grace (Linus arregla motos, no recibe el pedido):
+[{"assistanceId":"395b4681-a330-42f8-a9a9-e7c4cb7f305d","mechanicId":"57ae47e7-6c6e-42b8-95f7-e9e344ac4ff1","requiredSkill":"CHAIN_REPAIR","vehicleType":"BICYCLE","latitude":-34.5795,"longitude":-58.425,"distanceKm":4.2,"etaMinutes":15,"etaSource":"ROUTE","ranking":2,"expiresAt":"2026-11-03T00:39:02.673517Z"}]
+[{"assistanceId":"395b4681-a330-42f8-a9a9-e7c4cb7f305d","mechanicId":"9ead7dfc-096c-4f74-ad9b-819e91f4832f","requiredSkill":"CHAIN_REPAIR","vehicleType":"BICYCLE","latitude":-34.5795,"longitude":-58.425,"distanceKm":2.7,"etaMinutes":10,"etaSource":"ROUTE","ranking":1,"expiresAt":"2026-11-03T00:39:02.673517Z"}]
+
+4. Ada y Grace aceptan al mismo tiempo:
+ada: HTTP 409 {"detail":"Assistance 395b4681-a330-42f8-a9a9-e7c4cb7f305d was already taken by another mechanic","instance":"/api/dispatches/395b4681-a330-42f8-a9a9-e7c4cb7f305d/accept","status":409,"title":"Assistance already taken","code":"ALREADY_TAKEN"}
+grace: HTTP 200 {"assistanceId":"395b4681-a330-42f8-a9a9-e7c4cb7f305d","mechanicId":"9ead7dfc-096c-4f74-ad9b-819e91f4832f","distanceKm":2.7,"etaMinutes":10,"status":"MATCHED","round":1,"offersExpireAt":"2026-11-03T00:39:02.673517Z","offers":[{"mechanicId":"9ead7dfc-096c-4f74-ad9b-819e91f4832f","distanceKm":2.7,"etaMinutes":10,"etaSource":"ROUTE","ranking":1,"status":"ACCEPTED"},{"mechanicId":"57ae47e7-6c6e-42b8-95f7-e9e344ac4ff1","distanceKm":4.2,"etaMinutes":15,"etaSource":"ROUTE","ranking":2,"status":"LOST"}],"createdAt":"2026-11-03T00:37:02.673517Z"}
+
+Asistencia:
+{"id":"395b4681-a330-42f8-a9a9-e7c4cb7f305d","clientId":"e659ce92-0b5b-47f7-ac70-7dd60892d34f","vehicleId":"a2d41975-d987-41ff-bbdd-6dc2bf760946","vehicleType":"BICYCLE","description":"Se cortó la cadena en Palermo","problemType":"CHAIN","requiredSkill":"CHAIN_REPAIR","latitude":-34.5795,"longitude":-58.425,"status":"MATCHED","assignedMechanicId":"9ead7dfc-096c-4f74-ad9b-819e91f4832f","rating":null,"ratingComment":null,"offersExpireAt":null,"idempotencyKey":"demo-1793666222","clientCreatedAt":"2026-11-03T00:37:02Z","createdAt":"2026-11-03T00:37:02.575164Z","urgency":"MEDIUM","triageSource":"KEYWORDS","triageConfidence":0.7}
+Despacho:
+{"assistanceId":"395b4681-a330-42f8-a9a9-e7c4cb7f305d","mechanicId":"9ead7dfc-096c-4f74-ad9b-819e91f4832f","distanceKm":2.7,"etaMinutes":10,"status":"MATCHED","round":1,"offersExpireAt":"2026-11-03T00:39:02.673517Z","offers":[{"mechanicId":"9ead7dfc-096c-4f74-ad9b-819e91f4832f","distanceKm":2.7,"etaMinutes":10,"etaSource":"ROUTE","ranking":1,"status":"ACCEPTED"},{"mechanicId":"57ae47e7-6c6e-42b8-95f7-e9e344ac4ff1","distanceKm":4.2,"etaMinutes":15,"etaSource":"ROUTE","ranking":2,"status":"LOST"}],"createdAt":"2026-11-03T00:37:02.673517Z"}
+Calificación del trabajo:
+{"id":"395b4681-a330-42f8-a9a9-e7c4cb7f305d","clientId":"e659ce92-0b5b-47f7-ac70-7dd60892d34f","vehicleId":"a2d41975-d987-41ff-bbdd-6dc2bf760946","vehicleType":"BICYCLE","description":"Se cortó la cadena en Palermo","problemType":"CHAIN","requiredSkill":"CHAIN_REPAIR","latitude":-34.5795,"longitude":-58.425,"status":"COMPLETED","assignedMechanicId":"9ead7dfc-096c-4f74-ad9b-819e91f4832f","rating":4,"ratingComment":"Llegó rápido y dejó la bici andando","offersExpireAt":null,"idempotencyKey":"demo-1793666222","clientCreatedAt":"2026-11-03T00:37:02Z","createdAt":"2026-11-03T00:37:02.575164Z","urgency":"MEDIUM","triageSource":"KEYWORDS","triageConfidence":0.7}
+Mecánico con su calificación actualizada (llegó por Kafka):
+{"id":"9ead7dfc-096c-4f74-ad9b-819e91f4832f","name":"Grace Rodados","email":"grace-1793666222@example.com","latitude":-34.584,"longitude":-58.43,"available":true,"rating":4.0,"ratingCount":1,"skills":["CHAIN_REPAIR"],"vehicleTypes":["BICYCLE"]}
+Historial de estados:
+[{"fromStatus":null,"toStatus":"REQUESTED","changedAt":"2026-11-03T00:37:02.577531Z"},{"fromStatus":"REQUESTED","toStatus":"MATCHED","changedAt":"2026-11-03T00:37:03.351771Z"},{"fromStatus":"MATCHED","toStatus":"IN_PROGRESS","changedAt":"2026-11-03T00:37:03.473736Z"},{"fromStatus":"IN_PROGRESS","toStatus":"COMPLETED","changedAt":"2026-11-03T00:37:03.487713Z"}]
